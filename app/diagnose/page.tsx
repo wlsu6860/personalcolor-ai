@@ -12,6 +12,12 @@ const PRICING = {
   membership: { label: "프리미엄 멤버십", price: "₩9,900", period: "월 구독" },
 } as const;
 
+const SOCIAL_PROOF_MIN = 20;
+
+// 완성도 게이지 계산 근거 — 실제 리포트 섹션 수를 세서 비율을 낸다 (임의의 숫자 아님)
+const FREE_SECTION_COUNT = 4; // 시즌 적합도, 톤 인상, 색채 조화, 매력 포인트
+const LOCKED_SECTION_COUNT = 11; // 심화소견, 피부톤, 판단근거, 베스트/워스트컬러, 코디3, 메이크업, 의류, 헤어
+
 function extractGradientColors(gradient: string): [string, string] {
   const matches = gradient.match(/#[0-9a-fA-F]{6}/g);
   if (matches && matches.length >= 2) return [matches[0], matches[1]];
@@ -366,6 +372,19 @@ export default function DiagnosePage() {
 
           {step === "result" && result && (
             <div className="flex flex-col gap-5">
+              {(() => {
+                const bestColorsCount = result.premiumDetail.bestColors.length;
+                const avoidColorsCount = result.premiumDetail.avoidColors.length;
+                const outfitComboCount = result.premiumDetail.outfitCombos?.length ?? 0;
+                const firstBestColor = result.premiumDetail.bestColors[0];
+                const unlockedPercent = Math.round(
+                  (FREE_SECTION_COUNT / (FREE_SECTION_COUNT + LOCKED_SECTION_COUNT)) * 100
+                );
+                const analysisCount = result.communityCount ?? 0;
+                const showSocialProof = analysisCount >= SOCIAL_PROOF_MIN;
+
+                return (
+                  <>
               <div
                 className="rounded-3xl p-10 text-white text-center"
                 style={{ background: SEASON_META[result.season].gradient }}
@@ -599,27 +618,63 @@ export default function DiagnosePage() {
                   </p>
                 </div>
               ) : (
-                <div className="relative card-surface rounded-2xl p-7 overflow-hidden">
-                  <div className="blur-sm select-none pointer-events-none opacity-70">
-                    <h3 className="font-serif-kr font-semibold mb-3">
-                      심화 컨설팅 소견
-                    </h3>
-                    <p className="text-sm mb-4">{result.premiumDetail.expertOverview}</p>
-                    <h3 className="font-serif-kr font-semibold mb-3">상세 리포트</h3>
-                    <p className="text-sm mb-3">{result.premiumDetail.skinTone}</p>
-                    <div className="flex gap-2 mb-3">
-                      {result.premiumDetail.bestColors.map((c) => (
-                        <span
-                          key={c.hex}
-                          className="w-8 h-8 rounded-full inline-block"
-                          style={{ backgroundColor: c.hex }}
-                        />
-                      ))}
+                <div className="flex flex-col gap-4">
+                  {/* 완성도 게이지 — 자이가르닉 효과: 미완성 상태를 보여주면 끝까지 보고 싶어짐 */}
+                  <div className="card-surface rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium">리포트 열람 진행률</span>
+                      <span className="text-xs text-[var(--muted)] tabular-nums">
+                        {unlockedPercent}% 공개됨
+                      </span>
                     </div>
-                    <p className="text-sm">{result.premiumDetail.makeupTips}</p>
+                    <div className="h-2 rounded-full bg-[var(--background)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${unlockedPercent}%`, background: "var(--accent)" }}
+                      />
+                    </div>
                   </div>
 
-                  {waitlistStatus === "done" ? (
+                  {/* 무료 미리보기 1개는 실제로 선명하게 — "구체적으로 뭘 놓치는지" 보여줘야 사고 싶어짐 */}
+                  {firstBestColor && (
+                    <div className="card-surface rounded-2xl p-5 flex items-center gap-4">
+                      <span
+                        className="w-12 h-12 rounded-full border hairline shrink-0"
+                        style={{ backgroundColor: firstBestColor.hex }}
+                      />
+                      <div>
+                        <p className="text-xs text-[var(--accent)] font-medium mb-0.5">
+                          무료 미리보기 — {firstBestColor.name}
+                        </p>
+                        <p className="text-xs text-[var(--muted)]">
+                          이런 베스트 컬러가 {bestColorsCount - 1}개 더, 피해야 할 컬러가{" "}
+                          {avoidColorsCount}개 준비되어 있어요
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="relative card-surface rounded-2xl p-7 overflow-hidden">
+                    <div className="blur-sm select-none pointer-events-none opacity-70">
+                      <h3 className="font-serif-kr font-semibold mb-3">
+                        심화 컨설팅 소견
+                      </h3>
+                      <p className="text-sm mb-4">{result.premiumDetail.expertOverview}</p>
+                      <h3 className="font-serif-kr font-semibold mb-3">상세 리포트</h3>
+                      <p className="text-sm mb-3">{result.premiumDetail.skinTone}</p>
+                      <div className="flex gap-2 mb-3">
+                        {result.premiumDetail.bestColors.map((c) => (
+                          <span
+                            key={c.hex}
+                            className="w-8 h-8 rounded-full inline-block"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm">{result.premiumDetail.makeupTips}</p>
+                    </div>
+
+                    {waitlistStatus === "done" ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--card)]/90 backdrop-blur-[2px] px-8 text-center">
                       <span className="text-xl">✅</span>
                       <p className="text-sm leading-relaxed">
@@ -635,9 +690,12 @@ export default function DiagnosePage() {
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-6">
                       <span className="text-lg">🔒</span>
                       <p className="text-sm text-center leading-relaxed">
-                        심화 소견 · 베스트/워스트 팔레트 · 상황별 아웃핏 조합까지
-                        <br />
-                        <strong>전체 리포트</strong>는 아래에서 선택하실 수 있어요
+                        <strong>
+                          {name ? `${name}님을` : "회원님을"} 위한 컬러{" "}
+                          {bestColorsCount + avoidColorsCount}개 · 코디{" "}
+                          {outfitComboCount}세트 · 뷰티팁 3가지
+                        </strong>
+                        가 준비됐어요
                       </p>
 
                       <div className="w-full grid grid-cols-2 gap-3">
@@ -690,11 +748,21 @@ export default function DiagnosePage() {
                       {waitlistStatus === "error" && (
                         <p className="text-xs text-red-500">{waitlistError}</p>
                       )}
-                      <p className="text-[10px] text-[var(--muted)] text-center">
-                        결제 시스템 준비 중이에요. 지금은 오픈 알림 신청만 가능해요.
+                      <p className="text-[10px] text-[var(--muted)] text-center leading-relaxed">
+                        오프라인 퍼스널컬러 상담 5~15만원 · 상세 리포트는 그 1/10 가격이에요
+                        <br />
+                        결제 시스템 준비 중이라, 지금은 오픈 알림 신청만 가능해요.
+                        {showSocialProof && (
+                          <>
+                            <br />
+                            지금까지 {analysisCount.toLocaleString("ko-KR")}명이 컬러핏으로
+                            진단받았어요
+                          </>
+                        )}
                       </p>
                     </div>
                   )}
+                  </div>
                 </div>
               )}
 
@@ -702,6 +770,9 @@ export default function DiagnosePage() {
                 본 진단은 AI가 사진을 기반으로 추정한 참고용 결과이며,
                 실제 색채 전문가의 대면 진단과 다를 수 있어요.
               </p>
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>

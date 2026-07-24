@@ -34,6 +34,8 @@ export interface PersonalColorResult {
   confidence: Confidence;
   seasonAffinity: Record<Season, number>;
   freeSummary: FreeSummary;
+  /** 실제 누적 진단 완료 수 — 사회적 증거 표시용. 조작하지 않은 진짜 값. */
+  communityCount?: number;
   premiumDetail: {
     expertOverview: string;
     skinTone: string;

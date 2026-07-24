@@ -7,6 +7,7 @@ import {
   readQuotaCookie,
   makeQuotaCookie,
 } from "@/lib/guards";
+import { incrementAnalysisCount } from "@/lib/stats";
 
 export const runtime = "nodejs";
 
@@ -219,7 +220,11 @@ export async function POST(request: NextRequest) {
     }
 
     const result = JSON.parse(jsonMatch[0]);
-    return withQuotaCookie(NextResponse.json(result), newCount);
+    const communityCount = await incrementAnalysisCount().catch(() => undefined);
+    return withQuotaCookie(
+      NextResponse.json({ ...result, communityCount }),
+      newCount
+    );
   } catch (error) {
     console.error("[analyze] 분석 실패:", error);
     return withQuotaCookie(

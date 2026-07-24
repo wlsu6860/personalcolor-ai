@@ -1,5 +1,9 @@
 import Link from "next/link";
 import SubscribeForm from "@/components/SubscribeForm";
+import { getAnalysisCount } from "@/lib/stats";
+
+// 이 숫자보다 적으면 오히려 역효과라 아예 노출하지 않는다 (가짜로 채우지 않음)
+const SOCIAL_PROOF_MIN = 20;
 
 const SEASONS = [
   {
@@ -72,7 +76,10 @@ function Brand() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const analysisCount = await getAnalysisCount().catch(() => 0);
+  const showSocialProof = analysisCount >= SOCIAL_PROOF_MIN;
+
   return (
     <div className="flex-1 flex flex-col overflow-x-clip">
       <header className="border-b hairline sticky top-0 bg-[var(--background)]/85 backdrop-blur-md z-50">
@@ -122,6 +129,17 @@ export default function Home() {
                 바로 진행돼요
               </span>
             </div>
+
+            {showSocialProof && (
+              <p className="fade-up delay-4 text-xs text-[var(--muted)] mt-6 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] inline-block" />
+                지금까지{" "}
+                <strong className="text-[var(--foreground)] tabular-nums">
+                  {analysisCount.toLocaleString("ko-KR")}명
+                </strong>
+                이 컬러핏으로 진단받았어요
+              </p>
+            )}
           </div>
 
           {/* season card stack */}
