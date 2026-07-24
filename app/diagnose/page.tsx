@@ -11,6 +11,14 @@ import {
   ANALYSIS_FACTOR_META,
   ALLOWED_IMAGE_TYPES,
 } from "@/lib/personalColor";
+import ColorDrape from "@/components/ColorDrape";
+
+const REASSURANCE_MESSAGES = [
+  "AI가 신중하게 최종 리포트를 작성하고 있어요",
+  "정확도를 높이기 위해 한 번 더 확인하고 있어요",
+  "꼼꼼한 분석일수록 시간이 조금 더 걸려요",
+  "거의 다 됐어요, 조금만 기다려주세요",
+];
 
 type Tier = "single" | "membership";
 
@@ -124,6 +132,7 @@ export default function DiagnosePage() {
   const [result, setResult] = useState<PersonalColorResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [reassuranceIndex, setReassuranceIndex] = useState(0);
   const [email, setEmail] = useState("");
   const [waitlistStatus, setWaitlistStatus] = useState<
     "idle" | "loading" | "done" | "error"
@@ -155,9 +164,15 @@ export default function DiagnosePage() {
     setErrorMessage("");
 
     setLoadingMsgIndex(0);
+    setReassuranceIndex(0);
     const msgInterval = setInterval(() => {
       setLoadingMsgIndex((i) => Math.min(i + 1, ANALYSIS_FACTOR_KEYS.length - 1));
     }, 1200);
+    // 체크리스트가 다 채워진 뒤에도(실제 분석은 그보다 훨씬 오래 걸림) 화면이
+    // "멈춘 것처럼" 보이지 않도록, 계속 바뀌는 안내 문구를 별도로 돌린다.
+    const reassureInterval = setInterval(() => {
+      setReassuranceIndex((i) => (i + 1) % REASSURANCE_MESSAGES.length);
+    }, 3200);
 
     try {
       // iOS Safari는 File 객체의 내부 MIME 타입 문자열이 비표준이면 FormData.append 단계에서
@@ -208,6 +223,7 @@ export default function DiagnosePage() {
       setStep("error");
     } finally {
       clearInterval(msgInterval);
+      clearInterval(reassureInterval);
     }
   }
 
@@ -242,13 +258,23 @@ export default function DiagnosePage() {
     }
   }
 
-  async function handleWaitlistJoin(tier: Tier) {
-    if (!email) {
-      setWaitlistError("이메일을 먼저 입력해주세요.");
+  function handleSelectTier(tier: Tier) {
+    setSelectedTier(tier);
+    setWaitlistError("");
+    if (waitlistStatus === "error") setWaitlistStatus("idle");
+  }
+
+  async function handleWaitlistSubmit() {
+    if (!selectedTier) {
+      setWaitlistError("먼저 위에서 옵션을 선택해주세요.");
       setWaitlistStatus("error");
       return;
     }
-    setSelectedTier(tier);
+    if (!email) {
+      setWaitlistError("이메일을 입력해주세요.");
+      setWaitlistStatus("error");
+      return;
+    }
     setWaitlistStatus("loading");
     setWaitlistError("");
     try {
@@ -260,7 +286,7 @@ export default function DiagnosePage() {
           name,
           season: result?.season ?? null,
           source: "paywall",
-          tier,
+          tier: selectedTier,
         }),
       });
       const data = await res.json();
@@ -463,6 +489,12 @@ export default function DiagnosePage() {
                   );
                 })}
               </div>
+              <p
+                key={reassuranceIndex}
+                className="fade-up text-xs text-[var(--accent-deep)] text-center max-w-[220px]"
+              >
+                {REASSURANCE_MESSAGES[reassuranceIndex]}
+              </p>
             </div>
           )}
 
@@ -661,23 +693,17 @@ export default function DiagnosePage() {
                   </div>
 
                   <div className="card-surface rounded-2xl p-7">
-                    <h3 className="font-serif-kr font-semibold mb-4">
-                      베스트 컬러
+                    <h3 className="font-serif-kr font-semibold mb-1">
+                      나에게 이 컬러를 입혀보면
                     </h3>
-                    <div className="grid grid-cols-3 gap-3 mb-6">
-                      {result.premiumDetail.bestColors.map((c) => (
-                        <div key={c.hex} className="flex flex-col items-center gap-1.5">
-                          <span
-                            className="w-12 h-12 rounded-full border hairline"
-                            style={{ backgroundColor: c.hex }}
-                          />
-                          <span className="text-[11px] text-[var(--muted)]">
-                            {c.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <h3 className="font-serif-kr font-semibold mb-4">
+                    <p className="text-xs text-[var(--muted)] mb-5">
+                      스와치를 하나씩 눌러서 얼굴 옆에 대본 모습을 확인해보세요
+                    </p>
+                    <ColorDrape
+                      photoUrl={previewUrl}
+                      colors={result.premiumDetail.bestColors}
+                    />
+                    <h3 className="font-serif-kr font-semibold mb-4 mt-8">
                       피해야 할 컬러
                     </h3>
                     <div className="grid grid-cols-3 gap-3">
@@ -785,22 +811,25 @@ export default function DiagnosePage() {
                     </div>
                   </div>
 
-                  {/* 무료 미리보기 1개는 실제로 선명하게 — "구체적으로 뭘 놓치는지" 보여줘야 사고 싶어짐 */}
+                  {/* 무료 미리보기: 텍스트/원형 스와치 대신 실제 사진 옆에 컬러를 대보는 드레이핑으로 —
+                      "구체적으로 뭘 놓치는지" 시각적으로 보여줘야 사고 싶어짐 */}
                   {firstBestColor && (
-                    <div className="card-surface rounded-2xl p-5 flex items-center gap-4">
-                      <span
-                        className="w-12 h-12 rounded-full border hairline shrink-0"
-                        style={{ backgroundColor: firstBestColor.hex }}
+                    <div className="card-surface rounded-2xl p-6">
+                      <h3 className="font-serif-kr font-semibold mb-1">
+                        이 컬러, 이렇게 입어보세요
+                      </h3>
+                      <p className="text-xs text-[var(--muted)] mb-5">
+                        실제 얼굴 옆에 컬러를 대보는 드레이핑 방식으로 확인해요
+                      </p>
+                      <ColorDrape
+                        photoUrl={previewUrl}
+                        colors={[firstBestColor]}
+                        lockedCount={Math.max(bestColorsCount - 1, 0)}
                       />
-                      <div>
-                        <p className="text-xs text-[var(--accent)] font-medium mb-0.5">
-                          무료 미리보기 — {firstBestColor.name}
-                        </p>
-                        <p className="text-xs text-[var(--muted)]">
-                          이런 베스트 컬러가 {bestColorsCount - 1}개 더, 피해야 할 컬러가{" "}
-                          {avoidColorsCount}개 준비되어 있어요
-                        </p>
-                      </div>
+                      <p className="text-xs text-[var(--muted)] mt-5">
+                        이런 베스트 컬러가 {Math.max(bestColorsCount - 1, 0)}개 더, 피해야 할
+                        컬러가 {avoidColorsCount}개 준비되어 있어요
+                      </p>
                     </div>
                   )}
 
@@ -849,42 +878,46 @@ export default function DiagnosePage() {
                       </p>
 
                       <div className="w-full grid grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleWaitlistJoin("single")}
-                          disabled={waitlistStatus === "loading"}
-                          className="card-surface rounded-xl p-4 text-left hover:border-[var(--accent)] transition-colors disabled:opacity-50"
-                        >
-                          <p className="text-[10px] text-[var(--muted)] tracking-wide">
-                            {PRICING.single.period}
-                          </p>
-                          <p className="font-serif-kr font-semibold text-lg mt-0.5">
-                            {PRICING.single.price}
-                          </p>
-                          <p className="text-[11px] text-[var(--muted)] mt-1">
-                            이 리포트 1건 전체 열람
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleWaitlistJoin("membership")}
-                          disabled={waitlistStatus === "loading"}
-                          className="rounded-xl p-4 text-left btn-primary transition-opacity disabled:opacity-50 relative"
-                        >
-                          <span className="absolute -top-2 right-3 text-[9px] bg-[var(--accent)] text-white px-2 py-0.5 rounded-full">
-                            추천
-                          </span>
-                          <p className="text-[10px] opacity-70 tracking-wide">
-                            {PRICING.membership.period}
-                          </p>
-                          <p className="font-serif-kr font-semibold text-lg mt-0.5">
-                            {PRICING.membership.price}
-                          </p>
-                          <p className="text-[11px] opacity-80 mt-1">
-                            무제한 재진단 + 매주 아웃핏 레터
-                          </p>
-                        </button>
+                        {(["single", "membership"] as Tier[]).map((tier) => {
+                          const isSelected = selectedTier === tier;
+                          const isMembership = tier === "membership";
+                          return (
+                            <button
+                              key={tier}
+                              type="button"
+                              onClick={() => handleSelectTier(tier)}
+                              disabled={waitlistStatus === "loading"}
+                              aria-pressed={isSelected}
+                              className={`relative rounded-xl p-4 text-left transition-all border-2 disabled:opacity-50 ${
+                                isSelected
+                                  ? "border-[var(--accent)] bg-[var(--accent-tint)] scale-[1.03]"
+                                  : "border-transparent card-surface hover:border-[var(--line)]"
+                              }`}
+                            >
+                              {isMembership && (
+                                <span className="absolute -top-2 right-3 text-[9px] bg-[var(--accent)] text-white px-2 py-0.5 rounded-full">
+                                  추천
+                                </span>
+                              )}
+                              {isSelected && (
+                                <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[var(--accent)] text-white text-[9px] flex items-center justify-center">
+                                  ✓
+                                </span>
+                              )}
+                              <p className="text-[10px] text-[var(--muted)] tracking-wide">
+                                {PRICING[tier].period}
+                              </p>
+                              <p className="font-serif-kr font-semibold text-lg mt-0.5">
+                                {PRICING[tier].price}
+                              </p>
+                              <p className="text-[11px] text-[var(--muted)] mt-1">
+                                {isMembership
+                                  ? "무제한 재진단 + 매주 아웃핏 레터"
+                                  : "이 리포트 1건 전체 열람"}
+                              </p>
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <input
@@ -892,9 +925,23 @@ export default function DiagnosePage() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="이메일 주소 입력 후 위에서 선택하세요"
+                        placeholder="이메일 주소"
                         className="w-full rounded-full border hairline bg-[var(--background)] px-5 py-3.5 outline-none focus:border-[var(--accent)] text-sm text-center"
                       />
+
+                      <button
+                        type="button"
+                        onClick={handleWaitlistSubmit}
+                        disabled={waitlistStatus === "loading" || !selectedTier}
+                        className="btn-primary w-full font-medium py-3.5 rounded-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {waitlistStatus === "loading"
+                          ? "등록 중..."
+                          : selectedTier
+                          ? `${PRICING[selectedTier].label} 대기 등록하기`
+                          : "옵션을 먼저 선택해주세요"}
+                      </button>
+
                       {waitlistStatus === "error" && (
                         <p className="text-xs text-red-500">{waitlistError}</p>
                       )}
