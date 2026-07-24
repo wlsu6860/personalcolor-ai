@@ -11,6 +11,7 @@ import {
   ANALYSIS_FACTOR_META,
 } from "@/lib/personalColor";
 import ColorDrape from "@/components/ColorDrape";
+import AdRewardGate from "@/components/AdRewardGate";
 
 const REASSURANCE_MESSAGES = [
   "AI가 신중하게 최종 리포트를 작성하고 있어요",
@@ -29,8 +30,8 @@ const PRICING = {
 const SOCIAL_PROOF_MIN = 20;
 
 // 완성도 게이지 계산 근거 — 실제 리포트 섹션 수를 세서 비율을 낸다 (임의의 숫자 아님)
-const FREE_SECTION_COUNT = 5; // 시즌 적합도, 톤 인상, 색채 조화, 매력 포인트, 7가지 분석 포인트 체크리스트
-const LOCKED_SECTION_COUNT = 12; // 심화소견, 7가지 관찰결과, 피부톤, 판단근거, 베스트/워스트컬러, 코디3, 메이크업, 의류, 헤어
+const FREE_SECTION_COUNT = 6; // 시즌 적합도, 톤 인상, 색채 조화, 매력 포인트, 7가지 분석 포인트 체크리스트, 심화소견(광고 시청 시)
+const LOCKED_SECTION_COUNT = 11; // 7가지 관찰결과, 피부톤, 판단근거, 베스트/워스트컬러, 코디3, 메이크업, 의류, 헤어
 
 function extractGradientColors(gradient: string): [string, string] {
   const matches = gradient.match(/#[0-9a-fA-F]{6}/g);
@@ -684,6 +685,16 @@ export default function DiagnosePage() {
                 </div>
               </div>
 
+              {!isUnlocked && (
+                <AdRewardGate
+                  unlockedContent={
+                    <p className="text-sm leading-relaxed">
+                      {result.premiumDetail.expertOverview}
+                    </p>
+                  }
+                />
+              )}
+
               <div className="card-surface rounded-2xl p-7">
                 <h3 className="font-serif-kr font-semibold mb-1">
                   컬러핏 7-Point 정밀진단
@@ -889,10 +900,6 @@ export default function DiagnosePage() {
 
                   <div className="relative card-surface rounded-2xl p-7 overflow-hidden">
                     <div className="blur-sm select-none pointer-events-none opacity-70">
-                      <h3 className="font-serif-kr font-semibold mb-3">
-                        심화 컨설팅 소견
-                      </h3>
-                      <p className="text-sm mb-4">{result.premiumDetail.expertOverview}</p>
                       <h3 className="font-serif-kr font-semibold mb-3">상세 리포트</h3>
                       <p className="text-sm mb-3">{result.premiumDetail.skinTone}</p>
                       <div className="flex gap-2 mb-3">
