@@ -9,7 +9,6 @@ import {
   SEASONS,
   ANALYSIS_FACTOR_KEYS,
   ANALYSIS_FACTOR_META,
-  ALLOWED_IMAGE_TYPES,
 } from "@/lib/personalColor";
 import ColorDrape from "@/components/ColorDrape";
 
@@ -37,6 +36,67 @@ function extractGradientColors(gradient: string): [string, string] {
   const matches = gradient.match(/#[0-9a-fA-F]{6}/g);
   if (matches && matches.length >= 2) return [matches[0], matches[1]];
   return ["#b0794a", "#8f5f36"];
+}
+
+/**
+ * 업로드 전 사진을 리사이즈·압축해서 항상 작고 깨끗한 JPEG로 만든다.
+ *
+ * 이전엔 원본 File을 통째로 arrayBuffer()로 읽어 다시 포장했는데, 최근 고사양
+ * 스마트폰 카메라(특히 삼성 갤럭시) 사진은 한 장에 10~30MB가 넘는 경우가 많아,
+ * 그 방식이 모바일 브라우저 메모리 한계에 부딪혀 실패하는 문제가 있었다.
+ * createImageBitmap/canvas를 쓰면 브라우저가 자체 최적화된 디코더로 처리하기
+ * 때문에 원본 바이트를 JS 메모리에 그대로 들고 있지 않아도 되고, 결과물도 항상
+ * 표준 image/jpeg라 iOS Safari의 MIME 타입 버그도 함께 피해간다.
+ */
+async function resizeImageForUpload(
+  file: File,
+  maxDimension = 1600,
+  quality = 0.85
+): Promise<Blob> {
+  let source: ImageBitmap | HTMLImageElement;
+  let width: number;
+  let height: number;
+
+  if (typeof createImageBitmap === "function") {
+    source = await createImageBitmap(file);
+    width = source.width;
+    height = source.height;
+  } else {
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      source = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("이미지를 불러올 수 없어요."));
+        img.src = objectUrl;
+      });
+      width = source.naturalWidth;
+      height = source.naturalHeight;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  const scale = Math.min(1, maxDimension / Math.max(width, height));
+  const targetW = Math.max(1, Math.round(width * scale));
+  const targetH = Math.max(1, Math.round(height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("이미지를 처리할 수 없어요.");
+  ctx.drawImage(source, 0, 0, targetW, targetH);
+
+  if ("close" in source && typeof source.close === "function") {
+    source.close(); // ImageBitmap이 붙잡고 있던 디코딩 메모리를 즉시 반환
+  }
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", quality)
+  );
+  if (!blob) throw new Error("이미지를 압축하는 중 문제가 발생했어요.");
+  return blob;
 }
 
 async function drawShareCard(
@@ -175,17 +235,11 @@ export default function DiagnosePage() {
     }, 3200);
 
     try {
-      // iOS Safari는 File 객체의 내부 MIME 타입 문자열이 비표준이면 FormData.append 단계에서
-      // "The string did not match the expected pattern." 같은 원시 브라우저 에러를 던지는 경우가
-      // 있다. 항상 우리가 정한 안전한 타입으로 다시 포장한 Blob을 올려서 이 문제를 피한다.
+      // 업로드 전 리사이즈·압축 — 대용량 사진의 메모리 문제(안드로이드)와
+      // 비표준 MIME 타입 문제(iOS Safari)를 한 번에 해결한다.
       let normalizedPhoto: Blob;
       try {
-        const safeType: string = ALLOWED_IMAGE_TYPES.includes(
-          photo.type as (typeof ALLOWED_IMAGE_TYPES)[number]
-        )
-          ? photo.type
-          : "image/jpeg";
-        normalizedPhoto = new Blob([await photo.arrayBuffer()], { type: safeType });
+        normalizedPhoto = await resizeImageForUpload(photo);
       } catch {
         throw new Error("사진을 처리하는 중 문제가 발생했어요. 다른 사진으로 다시 시도해주세요.");
       }
