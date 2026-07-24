@@ -26,7 +26,7 @@ export default function ColorDrape({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center">
+      <div className="flex items-center overflow-x-auto py-2 -my-2">
         <div className="relative w-24 h-24 rounded-full overflow-hidden shrink-0 border-2 border-[var(--card)] shadow-lg z-10">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -40,7 +40,7 @@ export default function ColorDrape({
           )}
         </div>
 
-        <div className="flex items-center -ml-3">
+        <div className="flex items-center -ml-3 pr-2">
           {colors.map((c, i) => {
             const isActive = i === active;
             return (

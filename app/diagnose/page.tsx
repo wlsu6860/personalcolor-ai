@@ -706,7 +706,7 @@ export default function DiagnosePage() {
                     <h3 className="font-serif-kr font-semibold mb-4 mt-8">
                       피해야 할 컬러
                     </h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-4 gap-3">
                       {result.premiumDetail.avoidColors.map((c) => (
                         <div key={c.hex} className="flex flex-col items-center gap-1.5">
                           <span
@@ -736,7 +736,7 @@ export default function DiagnosePage() {
                             <p className="text-[11px] tracking-[0.2em] text-[var(--accent)] font-medium uppercase mb-3">
                               {combo.occasion}
                             </p>
-                            <div className="grid grid-cols-4 gap-2 mb-3">
+                            <div className="grid grid-cols-3 gap-2 mb-3">
                               {combo.items.map((it) => (
                                 <div
                                   key={it.item}
