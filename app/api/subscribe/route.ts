@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { getClientIp, checkIpLimit } from "@/lib/guards";
+import { upsertSubscriber } from "@/lib/subscriberStore";
 
 export const runtime = "nodejs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-interface Subscriber {
-  email: string;
-  name: string | null;
-  season: string | null;
-  source: string;
-  tier: string | null;
-  subscribedAt: string;
-}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -36,34 +26,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dir = path.join(process.cwd(), "data");
-    const file = path.join(dir, "subscribers.json");
-    await fs.mkdir(dir, { recursive: true });
-
-    let list: Subscriber[] = [];
-    try {
-      list = JSON.parse(await fs.readFile(file, "utf-8"));
-    } catch {
-      // 파일이 아직 없으면 빈 목록으로 시작
-    }
-
-    const existing = list.find((s) => s.email === email);
-    const tier = typeof body.tier === "string" && body.tier ? body.tier : null;
-
-    if (existing) {
-      existing.tier = tier ?? existing.tier;
-      existing.source = typeof body.source === "string" ? body.source : existing.source;
-    } else {
-      list.push({
-        email,
-        name: typeof body.name === "string" && body.name ? body.name : null,
-        season: typeof body.season === "string" && body.season ? body.season : null,
-        source: typeof body.source === "string" ? body.source : "unknown",
-        tier,
-        subscribedAt: new Date().toISOString(),
-      });
-    }
-    await fs.writeFile(file, JSON.stringify(list, null, 2), "utf-8");
+    await upsertSubscriber({
+      email,
+      name: typeof body.name === "string" && body.name ? body.name : null,
+      season: typeof body.season === "string" && body.season ? body.season : null,
+      source: typeof body.source === "string" ? body.source : "unknown",
+      tier: typeof body.tier === "string" && body.tier ? body.tier : null,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
