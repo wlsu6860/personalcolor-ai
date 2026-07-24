@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   },
   description:
     "사진 한 장으로 받아보는 AI 퍼스널컬러 분석. 웜톤·쿨톤부터 12가지 세부 시즌 타입까지.",
+  verification: {
+    google: "S26P5aNGKnm9jhxtYTe4WZLlOWNQ0JsByHCTNrGdIN8",
+  },
 };
 
 export default function RootLayout({
