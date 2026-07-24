@@ -1,5 +1,14 @@
 export type Season = "spring_warm" | "summer_cool" | "autumn_warm" | "winter_cool";
 
+// 클라이언트(diagnose 페이지)와 서버(analyze route)가 같은 허용 목록을 쓰도록 공유한다.
+export const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+] as const;
+export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
+
 export const SEASONS: Season[] = [
   "spring_warm",
   "summer_cool",

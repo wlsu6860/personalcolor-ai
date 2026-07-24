@@ -1,6 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { ANALYSIS_SYSTEM_PROMPT } from "@/lib/personalColor";
+import {
+  ANALYSIS_SYSTEM_PROMPT,
+  ALLOWED_IMAGE_TYPES,
+  type AllowedImageType,
+} from "@/lib/personalColor";
 import {
   getClientIp,
   checkIpLimit,
@@ -10,9 +14,6 @@ import {
 import { incrementAnalysisCount } from "@/lib/stats";
 
 export const runtime = "nodejs";
-
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
-type AllowedType = (typeof ALLOWED_TYPES)[number];
 
 // ---- 비용 가드레일 설정 ----
 const DAILY_LIMIT_PER_BROWSER = 5; // 서명 쿠키 기준 하루 5회
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!ALLOWED_TYPES.includes(file.type as AllowedType)) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
       return withQuotaCookie(
         NextResponse.json(
           { error: "지원하지 않는 이미지 형식입니다. JPG, PNG, WEBP, GIF 중 하나를 사용해주세요." },
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
     }
 
     const base64 = buffer.toString("base64");
-    const mediaType = file.type as AllowedType;
+    const mediaType = file.type as AllowedImageType;
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const imageBlock = {
       type: "image" as const,

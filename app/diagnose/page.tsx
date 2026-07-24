@@ -9,6 +9,7 @@ import {
   SEASONS,
   ANALYSIS_FACTOR_KEYS,
   ANALYSIS_FACTOR_META,
+  ALLOWED_IMAGE_TYPES,
 } from "@/lib/personalColor";
 
 type Tier = "single" | "membership";
@@ -150,12 +151,38 @@ export default function DiagnosePage() {
     }, 1200);
 
     try {
+      // iOS Safari는 File 객체의 내부 MIME 타입 문자열이 비표준이면 FormData.append 단계에서
+      // "The string did not match the expected pattern." 같은 원시 브라우저 에러를 던지는 경우가
+      // 있다. 항상 우리가 정한 안전한 타입으로 다시 포장한 Blob을 올려서 이 문제를 피한다.
+      let normalizedPhoto: Blob;
+      try {
+        const safeType: string = ALLOWED_IMAGE_TYPES.includes(
+          photo.type as (typeof ALLOWED_IMAGE_TYPES)[number]
+        )
+          ? photo.type
+          : "image/jpeg";
+        normalizedPhoto = new Blob([await photo.arrayBuffer()], { type: safeType });
+      } catch {
+        throw new Error("사진을 처리하는 중 문제가 발생했어요. 다른 사진으로 다시 시도해주세요.");
+      }
+
       const formData = new FormData();
-      formData.append("photo", photo);
+      formData.append("photo", normalizedPhoto, "photo.jpg");
       formData.append("name", name);
 
-      const res = await fetch("/api/analyze", { method: "POST", body: formData });
-      const data = await res.json();
+      let res: Response;
+      try {
+        res = await fetch("/api/analyze", { method: "POST", body: formData });
+      } catch {
+        throw new Error("네트워크 연결을 확인하고 다시 시도해주세요.");
+      }
+
+      let data: PersonalColorResult & { error?: string };
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("서버 응답을 처리할 수 없어요. 잠시 후 다시 시도해주세요.");
+      }
 
       if (!res.ok) {
         throw new Error(data.error || "분석에 실패했습니다.");
@@ -164,7 +191,11 @@ export default function DiagnosePage() {
       setResult(data as PersonalColorResult);
       setStep("result");
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
+      // 위에서 던진 에러는 전부 사용자에게 보여줘도 되는 한국어 메시지로 정리해뒀다.
+      // 혹시 모를 예기치 못한 예외만 일반 문구로 덮는다.
+      setErrorMessage(
+        err instanceof Error ? err.message : "알 수 없는 오류가 발생했어요. 다시 시도해주세요."
+      );
       setStep("error");
     } finally {
       clearInterval(msgInterval);
