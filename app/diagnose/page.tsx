@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { PersonalColorResult } from "@/lib/personalColor";
 import {
@@ -131,7 +131,16 @@ export default function DiagnosePage() {
   const [waitlistError, setWaitlistError] = useState("");
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
   const [shareStatus, setShareStatus] = useState<"idle" | "working" | "done">("idle");
+  const [barsAnimated, setBarsAnimated] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (step === "result") {
+      const t = setTimeout(() => setBarsAnimated(true), 200);
+      return () => clearTimeout(t);
+    }
+    setBarsAnimated(false);
+  }, [step]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -313,15 +322,23 @@ export default function DiagnosePage() {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square w-full rounded-2xl border border-dashed hairline bg-[var(--background)] flex items-center justify-center overflow-hidden"
+                className="relative aspect-square w-full rounded-2xl border border-dashed hairline bg-[var(--background)] flex items-center justify-center overflow-hidden"
               >
                 {previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={previewUrl}
-                    alt="업로드한 사진 미리보기"
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl}
+                      alt="업로드한 사진 미리보기"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="scan-overlay">
+                      <div className="scan-line" />
+                    </div>
+                    <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] bg-[var(--ink)]/80 text-[var(--background)] px-3 py-1 rounded-full tracking-wide">
+                      컬러핏이 사진을 살펴보고 있어요
+                    </span>
+                  </>
                 ) : (
                   <span className="text-[var(--muted)] text-sm">
                     탭해서 사진 선택하기
@@ -378,7 +395,33 @@ export default function DiagnosePage() {
           )}
 
           {step === "loading" && (
-            <div className="mt-14 flex flex-col items-center gap-8">
+            <div className="mt-10 flex flex-col items-center gap-8">
+              <div className="relative w-36 h-36">
+                {previewUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewUrl}
+                    alt="분석 중인 사진"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                )}
+                <div className="scan-overlay rounded-full">
+                  <div className="scan-line" />
+                </div>
+                <div className="absolute -inset-1.5 rounded-full border-2 border-transparent border-t-[var(--accent)] border-r-[var(--accent)] scan-ring" />
+                <span
+                  className="scan-marker absolute top-4 left-6 w-2 h-2 rounded-full bg-[var(--accent)]"
+                  style={{ animationDelay: "0s" }}
+                />
+                <span
+                  className="scan-marker absolute bottom-7 right-2 w-2 h-2 rounded-full bg-[var(--accent)]"
+                  style={{ animationDelay: "0.5s" }}
+                />
+                <span
+                  className="scan-marker absolute top-1/2 -right-1 w-2 h-2 rounded-full bg-[var(--accent)]"
+                  style={{ animationDelay: "1s" }}
+                />
+              </div>
               <div>
                 <p className="font-serif-kr text-lg text-center">
                   컬러핏 7-Point 정밀진단 진행 중
@@ -505,9 +548,9 @@ export default function DiagnosePage() {
                         </span>
                         <div className="flex-1 h-2.5 rounded-full bg-[var(--background)] overflow-hidden">
                           <div
-                            className="h-full rounded-full"
+                            className="h-full rounded-full fill-grow"
                             style={{
-                              width: `${score}%`,
+                              width: barsAnimated ? `${score}%` : "0%",
                               background: isWinner
                                 ? SEASON_META[s].solid
                                 : "var(--line)",
@@ -733,8 +776,11 @@ export default function DiagnosePage() {
                     </div>
                     <div className="h-2 rounded-full bg-[var(--background)] overflow-hidden">
                       <div
-                        className="h-full rounded-full"
-                        style={{ width: `${unlockedPercent}%`, background: "var(--accent)" }}
+                        className="h-full rounded-full fill-grow"
+                        style={{
+                          width: barsAnimated ? `${unlockedPercent}%` : "0%",
+                          background: "var(--accent)",
+                        }}
                       />
                     </div>
                   </div>

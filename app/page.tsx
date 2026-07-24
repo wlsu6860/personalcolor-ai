@@ -1,36 +1,10 @@
 import Link from "next/link";
 import SubscribeForm from "@/components/SubscribeForm";
+import SeasonCardStack from "@/components/SeasonCardStack";
 import { getAnalysisCount } from "@/lib/stats";
 
 // 이 숫자보다 적으면 오히려 역효과라 아예 노출하지 않는다 (가짜로 채우지 않음)
 const SOCIAL_PROOF_MIN = 20;
-
-const SEASONS = [
-  {
-    en: "Spring",
-    ko: "봄 웜톤",
-    gradient: "linear-gradient(150deg,#ffd9a0 0%,#ffab91 55%,#ff8a80 100%)",
-    tilt: "-6deg",
-  },
-  {
-    en: "Summer",
-    ko: "여름 쿨톤",
-    gradient: "linear-gradient(150deg,#c5d9ff 0%,#a8c8f0 55%,#c8b8e8 100%)",
-    tilt: "4deg",
-  },
-  {
-    en: "Autumn",
-    ko: "가을 웜톤",
-    gradient: "linear-gradient(150deg,#e0b070 0%,#b97a45 55%,#8a5a30 100%)",
-    tilt: "-3deg",
-  },
-  {
-    en: "Winter",
-    ko: "겨울 쿨톤",
-    gradient: "linear-gradient(150deg,#7c90d8 0%,#5e60ce 55%,#3f3d9e 100%)",
-    tilt: "5deg",
-  },
-];
 
 const PROCESS = [
   {
@@ -155,41 +129,8 @@ export default async function Home() {
             )}
           </div>
 
-          {/* season card stack */}
-          <div className="fade-up delay-3 relative h-105 hidden lg:block">
-            {SEASONS.map((s, i) => (
-              <div
-                key={s.en}
-                className="season-card absolute w-52 h-64 rounded-3xl p-6 flex flex-col justify-between text-white"
-                style={{
-                  background: s.gradient,
-                  ["--tilt" as string]: s.tilt,
-                  top: `${[0, 30, 130, 160][i]}px`,
-                  left: `${[0, 190, 40, 230][i]}px`,
-                  zIndex: [1, 2, 3, 4][i],
-                  animationDelay: `${i * 0.9}s`,
-                }}
-              >
-                <span className="font-display italic text-xl drop-shadow-sm">
-                  {s.en}
-                </span>
-                <div>
-                  <div className="flex gap-1.5 mb-3">
-                    {[0.95, 0.75, 0.55].map((o) => (
-                      <span
-                        key={o}
-                        className="w-4 h-4 rounded-full bg-white"
-                        style={{ opacity: o * 0.5 }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm font-medium drop-shadow-sm">
-                    {s.ko}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* season card stack — 마우스를 따라 살짝 반응하는 패럴랙스 */}
+          <SeasonCardStack />
         </section>
 
         {/* ---------- PALETTE STRIP ---------- */}
@@ -243,7 +184,7 @@ export default async function Home() {
                   <div className="p-5 sm:p-6 border-t hairline border-l text-[var(--muted)]">
                     {row.others}
                   </div>
-                  <div className="p-5 sm:p-6 border-t hairline border-l font-medium">
+                  <div className="p-5 sm:p-6 border-t hairline border-l font-medium transition-colors hover:bg-[var(--accent-tint)]">
                     ✓ {row.us}
                   </div>
                 </div>
@@ -278,7 +219,7 @@ export default async function Home() {
               {PROCESS.map((item) => (
                 <div
                   key={item.step}
-                  className="card-surface rounded-3xl p-9 text-left"
+                  className="card-surface rounded-3xl p-9 text-left transition-transform duration-300 hover:-translate-y-1.5"
                 >
                   <span className="font-display italic text-3xl accent-text">
                     {item.step}
