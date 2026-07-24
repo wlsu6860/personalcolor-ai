@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import type { PersonalColorResult } from "@/lib/personalColor";
-import { SEASON_META, CONFIDENCE_META } from "@/lib/personalColor";
+import { SEASON_META, CONFIDENCE_META, SEASONS } from "@/lib/personalColor";
 
 type Tier = "single" | "membership";
 
@@ -401,8 +401,74 @@ export default function DiagnosePage() {
               </button>
 
               <div className="card-surface rounded-2xl p-7">
-                <h3 className="font-serif-kr font-semibold mb-3">종합 소견</h3>
-                <p className="text-sm leading-relaxed">{result.freeSummary}</p>
+                <h3 className="font-serif-kr font-semibold mb-1">시즌 적합도</h3>
+                <p className="text-xs text-[var(--muted)] mb-5">
+                  4계절 전체를 비교해서 왜 이 타입인지 근거를 보여드려요 —
+                  대부분의 진단 앱과 다른 점이에요
+                </p>
+                <div className="flex flex-col gap-3">
+                  {SEASONS.map((s) => {
+                    const score = result.seasonAffinity[s];
+                    const isWinner = s === result.season;
+                    return (
+                      <div key={s} className="flex items-center gap-3">
+                        <span
+                          className={`text-xs w-14 shrink-0 ${
+                            isWinner ? "font-semibold" : "text-[var(--muted)]"
+                          }`}
+                        >
+                          {SEASON_META[s].shortLabel}
+                        </span>
+                        <div className="flex-1 h-2.5 rounded-full bg-[var(--background)] overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${score}%`,
+                              background: isWinner
+                                ? SEASON_META[s].solid
+                                : "var(--line)",
+                            }}
+                          />
+                        </div>
+                        <span
+                          className={`text-xs w-9 text-right tabular-nums ${
+                            isWinner ? "font-semibold" : "text-[var(--muted)]"
+                          }`}
+                        >
+                          {score}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="card-surface rounded-2xl p-7 flex flex-col gap-6">
+                <h3 className="font-serif-kr font-semibold -mb-2">종합 소견</h3>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                    전체 톤 인상
+                  </p>
+                  <p className="text-sm leading-relaxed">
+                    {result.freeSummary.toneImpression}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                    피부 · 눈동자 · 모발의 조화
+                  </p>
+                  <p className="text-sm leading-relaxed">
+                    {result.freeSummary.colorHarmony}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                    이 타입의 매력 포인트
+                  </p>
+                  <p className="text-sm leading-relaxed">
+                    {result.freeSummary.charmPoint}
+                  </p>
+                </div>
               </div>
 
               {isUnlocked ? (

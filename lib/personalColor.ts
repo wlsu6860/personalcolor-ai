@@ -1,5 +1,12 @@
 export type Season = "spring_warm" | "summer_cool" | "autumn_warm" | "winter_cool";
 
+export const SEASONS: Season[] = [
+  "spring_warm",
+  "summer_cool",
+  "autumn_warm",
+  "winter_cool",
+];
+
 export interface OutfitItem {
   item: string; // 상의, 하의, 아우터, 포인트
   hex: string;
@@ -14,12 +21,19 @@ export interface OutfitCombo {
 
 export type Confidence = "높음" | "중간" | "낮음";
 
+export interface FreeSummary {
+  toneImpression: string; // 전체 톤 인상
+  colorHarmony: string; // 피부·눈동자·모발의 색채 조화
+  charmPoint: string; // 이 타입만의 매력 포인트
+}
+
 export interface PersonalColorResult {
   season: Season;
   seasonLabel: string;
   subtype: string;
   confidence: Confidence;
-  freeSummary: string;
+  seasonAffinity: Record<Season, number>;
+  freeSummary: FreeSummary;
   premiumDetail: {
     expertOverview: string;
     skinTone: string;
@@ -33,11 +47,31 @@ export interface PersonalColorResult {
   };
 }
 
-export const SEASON_META: Record<Season, { label: string; gradient: string }> = {
-  spring_warm: { label: "봄 웜톤", gradient: "linear-gradient(135deg,#ffd28f,#ff9a8b)" },
-  summer_cool: { label: "여름 쿨톤", gradient: "linear-gradient(135deg,#a1c4fd,#c2e9fb)" },
-  autumn_warm: { label: "가을 웜톤", gradient: "linear-gradient(135deg,#d9a066,#a86b32)" },
-  winter_cool: { label: "겨울 쿨톤", gradient: "linear-gradient(135deg,#667eea,#764ba2)" },
+export const SEASON_META: Record<Season, { label: string; shortLabel: string; gradient: string; solid: string }> = {
+  spring_warm: {
+    label: "봄 웜톤",
+    shortLabel: "봄웜",
+    gradient: "linear-gradient(135deg,#ffd28f,#ff9a8b)",
+    solid: "#ff9a6b",
+  },
+  summer_cool: {
+    label: "여름 쿨톤",
+    shortLabel: "여름쿨",
+    gradient: "linear-gradient(135deg,#a1c4fd,#c2e9fb)",
+    solid: "#7fa8e8",
+  },
+  autumn_warm: {
+    label: "가을 웜톤",
+    shortLabel: "가을웜",
+    gradient: "linear-gradient(135deg,#d9a066,#a86b32)",
+    solid: "#b9793f",
+  },
+  winter_cool: {
+    label: "겨울 쿨톤",
+    shortLabel: "겨울쿨",
+    gradient: "linear-gradient(135deg,#667eea,#764ba2)",
+    solid: "#6b5ec4",
+  },
 };
 
 /**
@@ -60,18 +94,31 @@ export const ANALYSIS_SYSTEM_PROMPT = `너는 15년 경력의 시니어 컬러 �
 4. 의학적 진단이나 확정적 단언은 하지 마. "~한 경향이 있어요" 같은 부드러운 톤을 사용해.
 5. 한국어로 작성하되, 대면 컨설팅을 받는 듯한 전문적이고 신뢰감 있는 어휘(예: 언더톤, 명도 대비, 채도 허용치, 베이스 컬러)를 자연스럽게 섞어 써.
 6. outfitCombos는 진단된 시즌 타입에 실제로 어울리는 색으로, 실무 스타일리스트가 짜듯 현실적인 조합으로 구성해. 색 이름은 한국 패션에서 통용되는 명칭(예: 크림 베이지, 더스티 로즈, 카멜, 네이비)을 사용해.
-7. freeSummary와 premiumDetail.expertOverview는 역할이 다르고 겹치지 않아야 해.
-   - freeSummary: 대면 상담 브리핑처럼 "무엇을(what)"을 충실히 설명 — 톤 인상, 피부/눈동자/모발의 색채 조화, 이 시즌 타입의 대표적 매력을 전문 용어를 섞어 읽는 사람이 "진짜 전문가가 봐줬다"고 느낄 만큼 구체적이고 풍부하게 쓴다. 단, 정확한 컬러 코드·상황별 코디·메이크업/헤어 실전 팁은 여기서 언급하지 않는다.
-   - expertOverview: "왜(why) 그리고 더 깊은(deeper)" 파트 — 왜 이 시즌 타입으로 판단했는지의 구체적 근거, 헷갈리기 쉬운 인접 타입과 어떻게 다른지, 이 톤만이 갖는 심화 뉘앙스를 다룬다. freeSummary에서 이미 설명한 톤 인상을 반복하지 말 것.
+7. seasonAffinity는 네 시즌(spring_warm, summer_cool, autumn_warm, winter_cool) 전부에 대해 0~100 적합도 점수를 매겨. 최종 진단한 season이 가장 높아야 하고, 나머지 세 개도 사진에서 실제로 관찰되는 유사성에 따라 서로 다른 점수를 줘 (전부 비슷하게 뭉뚱그리지 말 것 — 예: 인접 계절은 40~60점대, 정반대 계절은 10~25점대처럼 실제 차이를 반영).
+8. freeSummary는 3개 섹션으로 나눠서 작성해 (각 섹션 2문장 이내, 정확한 컬러 코드·상황별 코디·메이크업/헤어 실전 팁은 언급하지 않음):
+   - toneImpression: 전체적인 첫인상 — 웜/쿨 방향성과 명도·채도 특징
+   - colorHarmony: 피부·눈동자·모발이 만들어내는 색채 조화의 특징
+   - charmPoint: 이 시즌 타입만의 대표적 매력 포인트
+9. premiumDetail.expertOverview는 "왜(why) 그리고 더 깊은(deeper)" 파트 — 왜 이 시즌 타입으로 판단했는지의 구체적 근거, 헷갈리기 쉬운 인접 타입과 어떻게 다른지, 이 톤만이 갖는 심화 뉘앙스를 다뤄. freeSummary에서 이미 설명한 내용을 반복하지 말 것.
 
 다음 JSON 스키마를 정확히 따라줘:
 {
   "season": "spring_warm" | "summer_cool" | "autumn_warm" | "winter_cool",
   "subtype": "예: 브라이트 스프링, 소프트 서머 등 세부 타입 한글 명칭",
   "confidence": "높음" | "중간" | "낮음",
-  "freeSummary": "무료로 공개하는 종합 소견, 4~5문장. 전문 컬러리스트가 대면 상담 브리핑에서 설명하듯 풍부하고 구체적으로 — 전체적인 톤 인상, 피부/눈동자/모발이 만들어내는 색채 조화, 이 시즌 타입의 대표적 매력을 전문 용어(언더톤, 명도 대비, 채도 허용치 등)를 섞어 서술. 정확한 컬러 코드나 상황별 코디, 메이크업/헤어 실전 팁은 언급하지 않는다.",
+  "seasonAffinity": {
+    "spring_warm": 0~100 정수,
+    "summer_cool": 0~100 정수,
+    "autumn_warm": 0~100 정수,
+    "winter_cool": 0~100 정수
+  },
+  "freeSummary": {
+    "toneImpression": "전체 톤 인상, 2문장 이내",
+    "colorHarmony": "피부·눈동자·모발의 색채 조화, 2문장 이내",
+    "charmPoint": "이 타입만의 매력 포인트, 2문장 이내"
+  },
   "premiumDetail": {
-    "expertOverview": "전문가 심화 코멘터리, 5~7문장. 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 구체적으로 어떻게 다른지, 이 톤만이 갖는 심화 뉘앙스와 실전 활용 시 유의점을 전문 용어로 설명. freeSummary(톤 인상)나 아래 skinTone/reasoning(기본 근거)에서 이미 다룬 내용은 반복하지 말고, 그보다 한 단계 더 깊은 통찰만 담아.",
+    "expertOverview": "전문가 심화 코멘터리, 5~7문장. 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 구체적으로 어떻게 다른지, 이 톤만이 갖는 심화 뉘앙스와 실전 활용 시 유의점을 전문 용어로 설명. freeSummary나 아래 skinTone/reasoning에서 이미 다룬 내용은 반복하지 말고, 그보다 한 단계 더 깊은 통찰만 담아.",
     "skinTone": "피부/눈동자/머리카락 색조에 대한 상세 설명 2~3문장",
     "reasoning": "왜 이 시즌 타입으로 판단했는지에 대한 근거 설명 2~3문장",
     "bestColors": [{ "hex": "#RRGGBB", "name": "색상 한글 이름" }, ... 6개],

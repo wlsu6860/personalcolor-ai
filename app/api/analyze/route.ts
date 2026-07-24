@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
     // ---- 5) 본 분석 ----
     const message = await anthropic.messages.create({
       model: "claude-sonnet-5",
-      max_tokens: 3800,
+      max_tokens: 4200,
       system: ANALYSIS_SYSTEM_PROMPT,
       messages: [
         {
