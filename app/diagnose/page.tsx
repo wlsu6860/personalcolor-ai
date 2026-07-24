@@ -3,7 +3,13 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import type { PersonalColorResult } from "@/lib/personalColor";
-import { SEASON_META, CONFIDENCE_META, SEASONS } from "@/lib/personalColor";
+import {
+  SEASON_META,
+  CONFIDENCE_META,
+  SEASONS,
+  ANALYSIS_FACTOR_KEYS,
+  ANALYSIS_FACTOR_META,
+} from "@/lib/personalColor";
 
 type Tier = "single" | "membership";
 
@@ -15,8 +21,8 @@ const PRICING = {
 const SOCIAL_PROOF_MIN = 20;
 
 // 완성도 게이지 계산 근거 — 실제 리포트 섹션 수를 세서 비율을 낸다 (임의의 숫자 아님)
-const FREE_SECTION_COUNT = 4; // 시즌 적합도, 톤 인상, 색채 조화, 매력 포인트
-const LOCKED_SECTION_COUNT = 11; // 심화소견, 피부톤, 판단근거, 베스트/워스트컬러, 코디3, 메이크업, 의류, 헤어
+const FREE_SECTION_COUNT = 5; // 시즌 적합도, 톤 인상, 색채 조화, 매력 포인트, 7가지 분석 포인트 체크리스트
+const LOCKED_SECTION_COUNT = 12; // 심화소견, 7가지 관찰결과, 피부톤, 판단근거, 베스트/워스트컬러, 코디3, 메이크업, 의류, 헤어
 
 function extractGradientColors(gradient: string): [string, string] {
   const matches = gradient.match(/#[0-9a-fA-F]{6}/g);
@@ -490,6 +496,24 @@ export default function DiagnosePage() {
                 </div>
               </div>
 
+              <div className="card-surface rounded-2xl p-7">
+                <h3 className="font-serif-kr font-semibold mb-1">
+                  7가지 정밀 분석 포인트
+                </h3>
+                <p className="text-xs text-[var(--muted)] mb-5">
+                  피부·눈동자·모발 3가지만 보는 다른 진단과 달리, 눈썹·입술·볼
+                  혈색·이목구비 대비까지 함께 확인해요
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  {ANALYSIS_FACTOR_KEYS.map((key) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-[var(--ok)] text-sm shrink-0">✓</span>
+                      <span className="text-xs">{ANALYSIS_FACTOR_META[key].label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {isUnlocked ? (
                 <div className="flex flex-col gap-5">
                   <div className="card-surface rounded-2xl p-7">
@@ -499,6 +523,27 @@ export default function DiagnosePage() {
                     <p className="text-sm leading-relaxed">
                       {result.premiumDetail.expertOverview}
                     </p>
+                  </div>
+
+                  <div className="card-surface rounded-2xl p-7">
+                    <h3 className="font-serif-kr font-semibold mb-4">
+                      7가지 관찰 결과
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {ANALYSIS_FACTOR_KEYS.map((key) => (
+                        <div
+                          key={key}
+                          className="rounded-xl bg-[var(--background)] px-4 py-3"
+                        >
+                          <p className="text-[10px] text-[var(--muted)] mb-0.5">
+                            {ANALYSIS_FACTOR_META[key].label}
+                          </p>
+                          <p className="text-xs font-medium">
+                            {result.premiumDetail.analysisFactors[key]}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="card-surface rounded-2xl p-7">

@@ -9,6 +9,7 @@
   --accent: #b0794a;
   --accent-deep: #8f5f36;
   --ink: #211c17;
+  --ok: #5c7a5c;
 }
 
 @theme inline {
@@ -27,6 +28,7 @@
     --accent: #cf9a67;
     --accent-deep: #b0794a;
     --ink: #f0eae2;
+    --ok: #86a986;
   }
 }
 
