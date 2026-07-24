@@ -2,6 +2,7 @@ import Link from "next/link";
 import SubscribeForm from "@/components/SubscribeForm";
 import SeasonCardStack from "@/components/SeasonCardStack";
 import { getAnalysisCount } from "@/lib/stats";
+import { SITE_URL } from "@/lib/site";
 
 // 이 숫자보다 적으면 오히려 역효과라 아예 노출하지 않는다 (가짜로 채우지 않음)
 const SOCIAL_PROOF_MIN = 20;
@@ -62,11 +63,35 @@ export default async function Home() {
   const analysisCount = await getAnalysisCount().catch(() => 0);
   const showSocialProof = analysisCount >= SOCIAL_PROOF_MIN;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Color Fit",
+    alternateName: "컬러핏",
+    url: SITE_URL,
+    applicationCategory: "LifestyleApplication",
+    operatingSystem: "Web",
+    description:
+      "사진 한 장으로 웜톤·쿨톤부터 세부 시즌 타입까지 분석하는 AI 퍼스널컬러 진단 서비스",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" },
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-x-clip">
+      {/* eslint-disable-next-line react/no-danger */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className="border-b hairline sticky top-0 bg-[var(--background)]/85 backdrop-blur-md z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
           <Brand />
+          <Link
+            href="/blog"
+            className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] mr-auto ml-8 hidden sm:inline"
+          >
+            컬러 저널
+          </Link>
           <Link
             href="/diagnose"
             className="btn-primary text-xs font-medium px-5 py-2.5 rounded-full tracking-wide"
