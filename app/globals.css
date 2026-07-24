@@ -8,6 +8,7 @@
   --line: #e4dccd;
   --accent: #b0794a;
   --accent-deep: #8f5f36;
+  --accent-tint: #f1e2d2;
   --ink: #211c17;
   --ok: #5c7a5c;
 }
@@ -27,6 +28,7 @@
     --line: #38312a;
     --accent: #cf9a67;
     --accent-deep: #b0794a;
+    --accent-tint: #2c2319;
     --ink: #f0eae2;
     --ok: #86a986;
   }

@@ -40,8 +40,8 @@ const PROCESS = [
   },
   {
     step: "02",
-    title: "AI 정밀 분석",
-    desc: "피부·눈동자·머리카락의 색조와 명도, 채도를 종합적으로 살펴봐요.",
+    title: "7-Point 정밀 분석",
+    desc: "피부·눈동자·모발은 물론 눈썹·입술·볼혈색·이목구비 대비까지 7가지를 살펴봐요.",
   },
   {
     step: "03",
@@ -53,7 +53,15 @@ const PROCESS = [
 const TRUST = [
   { value: "4계절 × 12타입", label: "세부 시즌 분류 체계" },
   { value: "약 1분", label: "평균 분석 소요 시간" },
-  { value: "3가지 요소", label: "피부 · 눈동자 · 모발 종합 분석" },
+  { value: "7-Point 정밀진단", label: "피부 · 눈 · 모발 · 눈썹 · 입술 · 볼혈색 · 대비" },
+];
+
+const COMPARISON = [
+  { label: "분석 포인트", others: "피부·눈·머리카락 3가지", us: "7가지 (+눈썹·입술·볼혈색·대비)" },
+  { label: "판단 근거", others: "결과만 통보", us: "4계절 적합도 점수 전체 공개" },
+  { label: "활용 가이드", others: "컬러 팔레트만 제공", us: "데일리·오피스·데이트 코디 3세트" },
+  { label: "재방문 가치", others: "1회성 결과, 끝", us: "매주 맞춤 아웃핏 레터" },
+  { label: "신뢰도 표기", others: "표기 없음", us: "사진 품질 기반 정밀도 등급 공개" },
 ];
 
 const PALETTE_STRIP = [
@@ -114,6 +122,11 @@ export default async function Home() {
             <p className="fade-up delay-2 text-[var(--muted)] max-w-md text-base leading-relaxed mt-9">
               얼굴 사진을 업로드하면 AI가 웜톤·쿨톤부터 세부 시즌 타입까지
               차분하게 분석해드려요. 기본 진단 결과는 무료입니다.
+            </p>
+
+            <p className="fade-up delay-2 text-xs text-[var(--accent-deep)] font-medium mt-4">
+              피부·눈·모발 3가지만 보는 다른 진단과 달리,{" "}
+              <span className="font-display italic">7-Point 정밀진단</span>으로 근거까지 보여드려요
             </p>
 
             <div className="fade-up delay-3 mt-11 flex items-center gap-6">
@@ -193,6 +206,47 @@ export default async function Home() {
                   style={{ backgroundColor: hex }}
                   title={hex}
                 />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- WHY COLOR FIT ---------- */}
+        <section className="max-w-4xl mx-auto px-6 py-24">
+          <p className="text-[11px] tracking-[0.35em] text-[var(--accent)] font-medium text-center mb-4 uppercase">
+            Why Color Fit
+          </p>
+          <h2 className="font-serif-kr text-2xl sm:text-3xl font-semibold text-center mb-4">
+            같은 &lsquo;퍼스널컬러 진단&rsquo;이어도,
+            <br />
+            보는 깊이가 다릅니다
+          </h2>
+          <p className="text-sm text-[var(--muted)] text-center max-w-md mx-auto mb-14 leading-relaxed">
+            일반적인 진단 앱과 비교하면 차이가 분명해요
+          </p>
+
+          <div className="card-surface rounded-3xl overflow-hidden">
+            <div className="grid grid-cols-[1.1fr_1fr_1.2fr] text-xs sm:text-sm">
+              <div className="p-5 sm:p-6 font-medium text-[var(--muted)]">비교 항목</div>
+              <div className="p-5 sm:p-6 text-[var(--muted)] border-l hairline">
+                일반 진단 앱
+              </div>
+              <div className="p-5 sm:p-6 font-semibold border-l hairline bg-[var(--accent-tint)]">
+                <span className="font-display italic accent-text">Color Fit</span>
+              </div>
+
+              {COMPARISON.map((row) => (
+                <div key={row.label} className="contents">
+                  <div className="p-5 sm:p-6 border-t hairline font-medium">
+                    {row.label}
+                  </div>
+                  <div className="p-5 sm:p-6 border-t hairline border-l text-[var(--muted)]">
+                    {row.others}
+                  </div>
+                  <div className="p-5 sm:p-6 border-t hairline border-l font-medium">
+                    ✓ {row.us}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

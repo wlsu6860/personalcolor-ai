@@ -78,13 +78,6 @@ async function drawShareCard(
 
 type Step = "upload" | "info" | "loading" | "result" | "error";
 
-const LOADING_MESSAGES = [
-  "피부 톤의 온도감을 살펴보고 있어요...",
-  "눈동자와 모발의 명도를 확인하는 중이에요...",
-  "어울리는 컬러 팔레트를 고르고 있어요...",
-  "리포트를 정리하고 있어요, 거의 다 됐어요.",
-];
-
 function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
   const steps = ["사진 업로드", "기본 정보", "진단 결과"];
   return (
@@ -151,9 +144,10 @@ export default function DiagnosePage() {
     setStep("loading");
     setErrorMessage("");
 
+    setLoadingMsgIndex(0);
     const msgInterval = setInterval(() => {
-      setLoadingMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
-    }, 2000);
+      setLoadingMsgIndex((i) => Math.min(i + 1, ANALYSIS_FACTOR_KEYS.length - 1));
+    }, 1200);
 
     try {
       const formData = new FormData();
@@ -353,13 +347,47 @@ export default function DiagnosePage() {
           )}
 
           {step === "loading" && (
-            <div className="mt-20 flex flex-col items-center gap-8 text-center">
-              <div className="w-12 h-12 rounded-full border-2 border-[var(--line)] border-t-[var(--accent)] animate-spin" />
+            <div className="mt-14 flex flex-col items-center gap-8">
               <div>
-                <p className="font-serif-kr text-lg">잠시만 기다려주세요</p>
-                <p className="text-[var(--muted)] text-sm mt-2">
-                  {LOADING_MESSAGES[loadingMsgIndex]}
+                <p className="font-serif-kr text-lg text-center">
+                  컬러핏 7-Point 정밀진단 진행 중
                 </p>
+                <p className="text-xs text-[var(--muted)] text-center mt-1.5">
+                  전문 컨설턴트가 보는 방식 그대로, 7가지를 하나씩 확인하고 있어요
+                </p>
+              </div>
+              <div className="w-full max-w-xs flex flex-col gap-3">
+                {ANALYSIS_FACTOR_KEYS.map((key, i) => {
+                  const checked = i < loadingMsgIndex;
+                  const active = i === loadingMsgIndex;
+                  return (
+                    <div key={key} className="flex items-center gap-3">
+                      <span
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 border transition-colors ${
+                          checked
+                            ? "bg-[var(--ok)] border-[var(--ok)] text-white"
+                            : "border-[var(--line)] text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </span>
+                      <span
+                        className={`text-sm ${
+                          active
+                            ? "font-medium"
+                            : checked
+                            ? "text-[var(--muted)]"
+                            : "text-[var(--muted)] opacity-50"
+                        }`}
+                      >
+                        {ANALYSIS_FACTOR_META[key].label}
+                      </span>
+                      {active && (
+                        <span className="w-3 h-3 rounded-full border-2 border-[var(--line)] border-t-[var(--accent)] animate-spin shrink-0" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -498,7 +526,7 @@ export default function DiagnosePage() {
 
               <div className="card-surface rounded-2xl p-7">
                 <h3 className="font-serif-kr font-semibold mb-1">
-                  7가지 정밀 분석 포인트
+                  컬러핏 7-Point 정밀진단
                 </h3>
                 <p className="text-xs text-[var(--muted)] mb-5">
                   피부·눈동자·모발 3가지만 보는 다른 진단과 달리, 눈썹·입술·볼
@@ -527,7 +555,7 @@ export default function DiagnosePage() {
 
                   <div className="card-surface rounded-2xl p-7">
                     <h3 className="font-serif-kr font-semibold mb-4">
-                      7가지 관찰 결과
+                      7-Point 정밀진단 관찰 결과
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {ANALYSIS_FACTOR_KEYS.map((key) => (
