@@ -14,6 +14,9 @@ import {
 import { incrementAnalysisCount } from "@/lib/stats";
 
 export const runtime = "nodejs";
+// Claude Vision 분석(얼굴 검문 + 본분석)이 사진에 따라 20~40초까지 걸릴 수 있어,
+// Vercel 기본 10초 제한을 넘겨 504로 끊기는 문제가 있었다. Hobby 플랜 최대치로 늘린다.
+export const maxDuration = 60;
 
 // ---- 비용 가드레일 설정 ----
 const DAILY_LIMIT_PER_BROWSER = 5; // 서명 쿠키 기준 하루 5회
