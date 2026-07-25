@@ -42,62 +42,51 @@ function extractGradientColors(gradient: string): [string, string] {
 /**
  * 업로드 전 사진을 리사이즈·압축해서 항상 작고 깨끗한 JPEG로 만든다.
  *
- * 이전엔 원본 File을 통째로 arrayBuffer()로 읽어 다시 포장했는데, 최근 고사양
- * 스마트폰 카메라(특히 삼성 갤럭시) 사진은 한 장에 10~30MB가 넘는 경우가 많아,
- * 그 방식이 모바일 브라우저 메모리 한계에 부딪혀 실패하는 문제가 있었다.
- * createImageBitmap/canvas를 쓰면 브라우저가 자체 최적화된 디코더로 처리하기
- * 때문에 원본 바이트를 JS 메모리에 그대로 들고 있지 않아도 되고, 결과물도 항상
- * 표준 image/jpeg라 iOS Safari의 MIME 타입 버그도 함께 피해간다.
+ * 처음엔 File을 arrayBuffer()로 통째로 읽었는데 대용량 사진(특히 고사양 카메라)에서
+ * 모바일 브라우저 메모리 문제로 실패했고, 그다음 createImageBitmap으로 바꿨더니
+ * 이번엔 일부 환경에서 createImageBitmap 자체가 특정 이미지를 디코딩하지 못해
+ * 계속 실패하는 문제가 있었다. 대신 업로드 미리보기에서 이미 검증된, 가장 호환성
+ * 넓은 방식 — <img> 엘리먼트로 디코딩 — 하나로 통일한다.
  */
 async function resizeImageForUpload(
   file: File,
   maxDimension = 1600,
   quality = 0.85
 ): Promise<Blob> {
-  let source: ImageBitmap | HTMLImageElement;
-  let width: number;
-  let height: number;
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("이미지를 불러올 수 없어요."));
+      el.src = objectUrl;
+    });
 
-  if (typeof createImageBitmap === "function") {
-    source = await createImageBitmap(file);
-    width = source.width;
-    height = source.height;
-  } else {
-    const objectUrl = URL.createObjectURL(file);
-    try {
-      source = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("이미지를 불러올 수 없어요."));
-        img.src = objectUrl;
-      });
-      width = source.naturalWidth;
-      height = source.naturalHeight;
-    } finally {
-      URL.revokeObjectURL(objectUrl);
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    if (!width || !height) {
+      throw new Error("이미지 크기를 확인할 수 없어요.");
     }
+
+    const scale = Math.min(1, maxDimension / Math.max(width, height));
+    const targetW = Math.max(1, Math.round(width * scale));
+    const targetH = Math.max(1, Math.round(height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("이미지를 처리할 수 없어요.");
+    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality)
+    );
+    if (!blob) throw new Error("이미지를 압축하는 중 문제가 발생했어요.");
+    return blob;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
   }
-
-  const scale = Math.min(1, maxDimension / Math.max(width, height));
-  const targetW = Math.max(1, Math.round(width * scale));
-  const targetH = Math.max(1, Math.round(height * scale));
-
-  const canvas = document.createElement("canvas");
-  canvas.width = targetW;
-  canvas.height = targetH;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("이미지를 처리할 수 없어요.");
-  ctx.drawImage(source, 0, 0, targetW, targetH);
-
-  if ("close" in source && typeof source.close === "function") {
-    source.close(); // ImageBitmap이 붙잡고 있던 디코딩 메모리를 즉시 반환
-  }
-
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", quality)
-  );
-  if (!blob) throw new Error("이미지를 압축하는 중 문제가 발생했어요.");
-  return blob;
 }
 
 async function drawShareCard(
@@ -202,6 +191,7 @@ export default function DiagnosePage() {
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
   const [shareStatus, setShareStatus] = useState<"idle" | "working" | "done">("idle");
   const [barsAnimated, setBarsAnimated] = useState(false);
+  const [scanReady, setScanReady] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -211,6 +201,18 @@ export default function DiagnosePage() {
     }
     setBarsAnimated(false);
   }, [step]);
+
+  // 스캔 애니메이션(scanSweep, 2.6s)이 끝날 때까지 "다음 단계로"를 비활성화해서
+  // 사용자가 사진 선택 직후 스캔 연출을 스캔 결과로 착각해 너무 빨리 넘어가지 않게 한다.
+  useEffect(() => {
+    if (!previewUrl) {
+      setScanReady(false);
+      return;
+    }
+    setScanReady(false);
+    const t = setTimeout(() => setScanReady(true), 2600);
+    return () => clearTimeout(t);
+  }, [previewUrl]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -241,7 +243,8 @@ export default function DiagnosePage() {
       let normalizedPhoto: Blob;
       try {
         normalizedPhoto = await resizeImageForUpload(photo);
-      } catch {
+      } catch (err) {
+        console.error("[resize] 사진 리사이즈 실패:", err);
         throw new Error("사진을 처리하는 중 문제가 발생했어요. 다른 사진으로 다시 시도해주세요.");
       }
 
@@ -413,11 +416,13 @@ export default function DiagnosePage() {
                       alt="업로드한 사진 미리보기"
                       className="w-full h-full object-cover"
                     />
-                    <div className="scan-overlay">
-                      <div className="scan-line" />
-                    </div>
+                    {!scanReady && (
+                      <div className="scan-overlay">
+                        <div className="scan-line" />
+                      </div>
+                    )}
                     <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] bg-[var(--ink)]/80 text-[var(--background)] px-3 py-1 rounded-full tracking-wide">
-                      컬러핏이 사진을 살펴보고 있어요
+                      {scanReady ? "확인 완료! 다음 단계로 넘어가주세요" : "컬러핏이 사진을 살펴보고 있어요"}
                     </span>
                   </>
                 ) : (
@@ -435,11 +440,11 @@ export default function DiagnosePage() {
               />
 
               <button
-                disabled={!photo}
+                disabled={!photo || !scanReady}
                 onClick={() => setStep("info")}
                 className="btn-primary font-medium py-4 rounded-full text-sm tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                다음 단계로
+                {photo && !scanReady ? "사진 확인 중..." : "다음 단계로"}
               </button>
             </div>
           )}
