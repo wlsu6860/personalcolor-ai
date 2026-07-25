@@ -87,3 +87,23 @@ export async function upsertSubscriber(input: UpsertInput): Promise<void> {
   }
   await writeFileList(list);
 }
+
+export async function getAllSubscribers(): Promise<Subscriber[]> {
+  if (redis) {
+    const map = await redis.hgetall<Record<string, Subscriber>>(REDIS_HASH_KEY);
+    if (!map) return [];
+    return Object.values(map).sort((a, b) =>
+      b.subscribedAt.localeCompare(a.subscribedAt)
+    );
+  }
+  const list = await readFileList();
+  return [...list].sort((a, b) => b.subscribedAt.localeCompare(a.subscribedAt));
+}
+
+export async function getSubscriberCount(): Promise<number> {
+  if (redis) {
+    return redis.hlen(REDIS_HASH_KEY);
+  }
+  const list = await readFileList();
+  return list.length;
+}
