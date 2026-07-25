@@ -628,7 +628,12 @@ export default function DiagnosePage() {
                 <h2 className="font-serif-kr text-3xl font-semibold mt-2">
                   {result.seasonLabel || SEASON_META[result.season].label}
                 </h2>
-                <p className="mt-1 opacity-90 text-sm">{result.subtype}</p>
+                <p className="mt-1 opacity-90 text-sm">
+                  {result.subtype}
+                  {result.subtypeDescription && (
+                    <span className="opacity-75"> · {result.subtypeDescription}</span>
+                  )}
+                </p>
                 <p className="text-xs mt-4 opacity-90 font-medium">
                   {CONFIDENCE_META[result.confidence].label}
                 </p>

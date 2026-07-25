@@ -64,6 +64,8 @@ export interface PersonalColorResult {
   season: Season;
   seasonLabel: string;
   subtype: string;
+  /** "라이트 서머" 같은 전문 용어를 처음 보는 사람도 바로 감이 오도록 쉬운 말로 푼 한 줄 설명 */
+  subtypeDescription: string;
   confidence: Confidence;
   seasonAffinity: Record<Season, number>;
   freeSummary: FreeSummary;
@@ -150,15 +152,17 @@ export const ANALYSIS_SYSTEM_PROMPT = `너는 15년 경력의 시니어 컬러 �
    - charmPoint: 이 시즌 타입만의 대표적 매력 포인트
 9. premiumDetail.analysisFactors는 위 7가지 관찰 포인트 각각에 대해 무엇을 관찰했는지 아주 짧은 구(6~12자 내외 한글 구절, 문장 아님)로 채워. 예: "밝고 핑크빛이 도는 쿨톤", "골드빛이 감도는 웜 언더톤".
 10. premiumDetail.expertCommentary는 "왜(why) 그리고 더 깊은(deeper)" 파트 — 3개 섹션으로 명확히 나눠서 작성해 (각 섹션 2~3문장, freeSummary나 skinTone/reasoning에서 이미 다룬 내용은 반복하지 말고 그보다 한 단계 더 깊은 통찰만 담아):
-   - differentiation: 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 7가지 관찰 포인트 중 어떤 근거로 구체적으로 다른지
+   - differentiation: 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 7가지 관찰 포인트 중 어떤 근거로 구체적으로 다른지. 전문 용어(세부 타입명)를 언급할 때는 처음 접하는 사람도 알 수 있게 괄호로 짧은 쉬운 설명을 바로 붙여라 (예: "라이트 서머(밝고 맑은 여름 쿨톤)"처럼). 용어만 나열하지 말 것
    - nuance: 이 톤만이 갖는 심화 뉘앙스 — 같은 시즌 안에서도 이 사람만의 세부적인 색채 특징
    - practicalTip: 이 뉘앙스를 실전에서 활용할 때(컬러 선택·조합 등) 유의할 점
 11. premiumDetail.makeupPalette는 이 톤에 어울리는 메이크업 컬러를 카테고리별 구체적인 색상 4개로 채워(파운데이션/베이스, 블러셔, 립, 아이섀도 각 1개씩). shade는 실제 화장품 매장에서 쓰는 표현(예: "웜 베이지", "코랄 핑크", "테라코타", "브라운 골드")으로, hex는 그 색조에 해당하는 대표 색상 코드로.
+12. subtypeDescription은 subtype(예: "라이트 서머", "다크 오텀")이 무슨 뜻인지 전문 용어를 처음 보는 사람도 바로 이해할 수 있게 쉬운 말로 푼 한 문장(15자 내외, 명사형으로 끝나도 됨. 예: "밝고 맑은 여름 쿨톤", "깊고 짙은 가을 웜톤"). subtype 옆에 나란히 보여줄 짧은 설명이니 subtype 단어 자체를 반복하지 말 것
 
 다음 JSON 스키마를 정확히 따라줘:
 {
   "season": "spring_warm" | "summer_cool" | "autumn_warm" | "winter_cool",
   "subtype": "예: 브라이트 스프링, 소프트 서머 등 세부 타입 한글 명칭",
+  "subtypeDescription": "subtype을 쉬운 말로 푼 한 줄 설명, 15자 내외",
   "confidence": "높음" | "중간" | "낮음",
   "seasonAffinity": {
     "spring_warm": 0~100 정수,
