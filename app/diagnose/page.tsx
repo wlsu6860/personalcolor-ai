@@ -31,14 +31,14 @@ const EARLY_BIRD_DEADLINE = "2026-08-15T23:59:59+09:00";
 const PRICING = {
   single: {
     label: "1회 리포트",
-    regularPrice: "₩4,900",
-    earlyBirdPrice: "₩2,900",
+    regularPrice: "₩10,000",
+    earlyBirdPrice: "₩5,000",
     period: "1회 결제",
   },
   membership: {
     label: "프리미엄 멤버십",
-    regularPrice: "₩9,900",
-    earlyBirdPrice: "₩4,900",
+    regularPrice: "₩20,000",
+    earlyBirdPrice: "₩9,900",
     period: "월 구독",
   },
 } as const;
