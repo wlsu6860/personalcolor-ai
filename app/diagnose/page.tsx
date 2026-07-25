@@ -12,6 +12,7 @@ import {
 } from "@/lib/personalColor";
 import ColorDrape from "@/components/ColorDrape";
 import AdRewardGate from "@/components/AdRewardGate";
+import OutfitItemIcon from "@/components/OutfitItemIcon";
 
 const REASSURANCE_MESSAGES = [
   "AI가 신중하게 최종 리포트를 작성하고 있어요",
@@ -87,6 +88,15 @@ async function resizeImageForUpload(
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
+}
+
+// 쿠팡파트너스 가입·승인 전까지의 임시 조치 — 지금은 수수료 없는 일반 검색
+// 링크만 연결한다. 승인되면 이 함수 내부만 쿠팡 파트너스 대시보드에서 발급받은
+// 실제 트래킹 링크로 바꿔주면 나머지 UI는 그대로 재사용된다. 그때는 바로 아래
+// 안내 문구도 "제휴 링크를 통해 수수료를 받을 수 있다"는 고지로 함께 바꿔야 한다
+// (지금은 실제 수수료가 없는 일반 링크라 고지 문구를 넣지 않음).
+function shoppingSearchUrl(query: string): string {
+  return `https://www.coupang.com/np/search?component=&q=${encodeURIComponent(query)}`;
 }
 
 async function drawShareCard(
@@ -842,7 +852,8 @@ export default function DiagnosePage() {
                       </h3>
                       <p className="text-xs text-[var(--muted)] mb-5">
                         {name ? `${name}님의` : "나의"} 톤에 맞춰 AI가 구성한
-                        상황별 코디 색 조합이에요
+                        상황별 코디 색 조합이에요 · 아이템을 누르면 비슷한 색
+                        상품을 찾아드려요
                       </p>
                       <div className="flex flex-col gap-6">
                         {result.premiumDetail.outfitCombos.map((combo) => (
@@ -852,21 +863,27 @@ export default function DiagnosePage() {
                             </p>
                             <div className="grid grid-cols-3 gap-2 mb-3">
                               {combo.items.map((it) => (
-                                <div
+                                <a
                                   key={it.item}
-                                  className="flex flex-col items-center gap-1.5"
+                                  href={shoppingSearchUrl(`${it.name} ${it.item}`)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex flex-col items-center gap-1.5 group"
                                 >
-                                  <span
-                                    className="w-full h-14 rounded-xl border hairline"
-                                    style={{ backgroundColor: it.hex }}
-                                  />
+                                  <div className="w-full aspect-square rounded-xl border hairline bg-[var(--background)] flex items-center justify-center p-2.5 transition-transform group-hover:-translate-y-0.5 group-hover:border-[var(--accent)]">
+                                    <OutfitItemIcon
+                                      item={it.item}
+                                      hex={it.hex}
+                                      className="w-full h-full"
+                                    />
+                                  </div>
                                   <span className="text-[10px] text-[var(--muted)]">
                                     {it.item}
                                   </span>
-                                  <span className="text-[10px] font-medium -mt-1">
+                                  <span className="text-[10px] font-medium -mt-1 group-hover:text-[var(--accent)]">
                                     {it.name}
                                   </span>
-                                </div>
+                                </a>
                               ))}
                             </div>
                             <p className="text-xs text-[var(--muted)] leading-relaxed">
@@ -875,6 +892,10 @@ export default function DiagnosePage() {
                           </div>
                         ))}
                       </div>
+                      <p className="text-[10px] text-[var(--muted)] mt-6 leading-relaxed">
+                        ※ 아이템을 누르면 색상·품목명으로 쇼핑몰 상품을
+                        검색해드려요.
+                      </p>
                     </div>
                   )}
 
