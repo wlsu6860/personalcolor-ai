@@ -103,8 +103,14 @@ export default async function Home() {
 
       <main className="flex-1">
         {/* ---------- HERO ---------- */}
-        <section className="max-w-6xl mx-auto px-6 pt-16 sm:pt-24 pb-24 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-16 items-center">
-          <div>
+        <section className="relative max-w-6xl mx-auto px-6 pt-16 sm:pt-24 pb-24 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-16 items-center">
+          <div className="hero-ambient" aria-hidden="true">
+            <span className="hero-blob hero-blob-1" />
+            <span className="hero-blob hero-blob-2" />
+            <span className="hero-blob hero-blob-3" />
+          </div>
+
+          <div className="relative z-10">
             <p className="fade-up text-[11px] tracking-[0.35em] text-[var(--accent)] font-medium mb-8 uppercase">
               AI Personal Color Consultation
             </p>
