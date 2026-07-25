@@ -902,9 +902,33 @@ export default function DiagnosePage() {
                   <div className="card-surface rounded-2xl p-7 flex flex-col gap-5">
                     <div>
                       <h3 className="font-serif-kr font-semibold mb-2">메이크업</h3>
-                      <p className="text-sm leading-relaxed">
+                      <p className="text-sm leading-relaxed mb-4">
                         {result.premiumDetail.makeupTips}
                       </p>
+                      {result.premiumDetail.makeupPalette?.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {result.premiumDetail.makeupPalette.map((p) => (
+                            <a
+                              key={p.category}
+                              href={shoppingSearchUrl(`${p.shade} ${p.category}`)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex flex-col items-center gap-1.5 group"
+                            >
+                              <span
+                                className="w-full aspect-square rounded-full border hairline transition-transform group-hover:-translate-y-0.5 group-hover:border-[var(--accent)]"
+                                style={{ backgroundColor: p.hex }}
+                              />
+                              <span className="text-[10px] text-[var(--muted)]">
+                                {p.category}
+                              </span>
+                              <span className="text-[10px] font-medium -mt-1 text-center group-hover:text-[var(--accent)]">
+                                {p.shade}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 className="font-serif-kr font-semibold mb-2">의류 스타일링</h3>

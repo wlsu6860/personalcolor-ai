@@ -82,6 +82,7 @@ export interface PersonalColorResult {
     avoidColors: { hex: string; name: string }[];
     outfitCombos: OutfitCombo[];
     makeupTips: string;
+    makeupPalette: { category: string; shade: string; hex: string }[];
     clothingTips: string;
     hairColorTips: string;
   };
@@ -152,6 +153,7 @@ export const ANALYSIS_SYSTEM_PROMPT = `너는 15년 경력의 시니어 컬러 �
    - differentiation: 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 7가지 관찰 포인트 중 어떤 근거로 구체적으로 다른지
    - nuance: 이 톤만이 갖는 심화 뉘앙스 — 같은 시즌 안에서도 이 사람만의 세부적인 색채 특징
    - practicalTip: 이 뉘앙스를 실전에서 활용할 때(컬러 선택·조합 등) 유의할 점
+11. premiumDetail.makeupPalette는 이 톤에 어울리는 메이크업 컬러를 카테고리별 구체적인 색상 4개로 채워(파운데이션/베이스, 블러셔, 립, 아이섀도 각 1개씩). shade는 실제 화장품 매장에서 쓰는 표현(예: "웜 베이지", "코랄 핑크", "테라코타", "브라운 골드")으로, hex는 그 색조에 해당하는 대표 색상 코드로.
 
 다음 JSON 스키마를 정확히 따라줘:
 {
@@ -205,6 +207,12 @@ export const ANALYSIS_SYSTEM_PROMPT = `너는 15년 경력의 시니어 컬러 �
       { "occasion": "데이트", "items": [...같은 구조 6개...], "tip": "..." }
     ],
     "makeupTips": "이 톤에 어울리는 메이크업 팁 2~3문장",
+    "makeupPalette": [
+      { "category": "베이스", "shade": "화장품 매장에서 쓰는 표현", "hex": "#RRGGBB" },
+      { "category": "블러셔", "shade": "...", "hex": "#RRGGBB" },
+      { "category": "립", "shade": "...", "hex": "#RRGGBB" },
+      { "category": "아이섀도", "shade": "...", "hex": "#RRGGBB" }
+    ],
     "clothingTips": "이 톤에 어울리는 의류 색상/스타일 팁 2~3문장",
     "hairColorTips": "이 톤에 어울리는 헤어 컬러 팁 1~2문장"
   }
