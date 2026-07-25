@@ -23,10 +23,30 @@ const REASSURANCE_MESSAGES = [
 
 type Tier = "single" | "membership";
 
+// 실제로 존재하는 마감 시각(KST) — 이 시점이 지나면 조기등록가는 자동으로
+// 사라지고 정가만 보인다. 가짜 카운트다운(방문할 때마다 리셋되는 것)이 아니라
+// 진짜 고정된 미래 시점이라 몇 번을 다시 봐도 같은 마감일이 유지된다.
+const EARLY_BIRD_DEADLINE = "2026-08-15T23:59:59+09:00";
+
 const PRICING = {
-  single: { label: "1회 리포트", price: "₩4,900", period: "1회 결제" },
-  membership: { label: "프리미엄 멤버십", price: "₩9,900", period: "월 구독" },
+  single: {
+    label: "1회 리포트",
+    regularPrice: "₩4,900",
+    earlyBirdPrice: "₩2,900",
+    period: "1회 결제",
+  },
+  membership: {
+    label: "프리미엄 멤버십",
+    regularPrice: "₩9,900",
+    earlyBirdPrice: "₩4,900",
+    period: "월 구독",
+  },
 } as const;
+
+function getEarlyBirdDaysLeft(): number {
+  const msLeft = new Date(EARLY_BIRD_DEADLINE).getTime() - Date.now();
+  return Math.max(0, Math.ceil(msLeft / 86_400_000));
+}
 
 const SOCIAL_PROOF_MIN = 20;
 
@@ -1032,10 +1052,21 @@ export default function DiagnosePage() {
                         가 준비됐어요
                       </p>
 
+                      {(() => {
+                        const daysLeft = getEarlyBirdDaysLeft();
+                        if (daysLeft <= 0) return null;
+                        return (
+                          <p className="text-[11px] text-[var(--accent)] font-medium bg-[var(--accent-tint)] px-3 py-1.5 rounded-full">
+                            🎉 웨이팅리스트 조기등록 혜택 · 8월 15일까지 (D-{daysLeft})
+                          </p>
+                        );
+                      })()}
+
                       <div className="w-full grid grid-cols-2 gap-3">
                         {(["single", "membership"] as Tier[]).map((tier) => {
                           const isSelected = selectedTier === tier;
                           const isMembership = tier === "membership";
+                          const isEarlyBird = getEarlyBirdDaysLeft() > 0;
                           return (
                             <button
                               key={tier}
@@ -1062,9 +1093,20 @@ export default function DiagnosePage() {
                               <p className="text-[10px] text-[var(--muted)] tracking-wide">
                                 {PRICING[tier].period}
                               </p>
-                              <p className="font-serif-kr font-semibold text-lg mt-0.5">
-                                {PRICING[tier].price}
-                              </p>
+                              {isEarlyBird ? (
+                                <p className="mt-0.5 flex items-baseline gap-1.5">
+                                  <span className="text-xs text-[var(--muted)] line-through">
+                                    {PRICING[tier].regularPrice}
+                                  </span>
+                                  <span className="font-serif-kr font-semibold text-lg text-[var(--accent)]">
+                                    {PRICING[tier].earlyBirdPrice}
+                                  </span>
+                                </p>
+                              ) : (
+                                <p className="font-serif-kr font-semibold text-lg mt-0.5">
+                                  {PRICING[tier].regularPrice}
+                                </p>
+                              )}
                               <p className="text-[11px] text-[var(--muted)] mt-1">
                                 {isMembership
                                   ? "무제한 재진단 + 매주 아웃핏 레터"
@@ -1103,7 +1145,10 @@ export default function DiagnosePage() {
                       <p className="text-[10px] text-[var(--muted)] text-center leading-relaxed">
                         오프라인 퍼스널컬러 상담 5~15만원 · 상세 리포트는 그 1/10 가격이에요
                         <br />
-                        결제 시스템 준비 중이라, 지금은 오픈 알림 신청만 가능해요.
+                        결제 시스템 준비 중이라 지금은 오픈 알림 신청만 가능해요 —{" "}
+                        {getEarlyBirdDaysLeft() > 0
+                          ? "8월 15일까지 등록하시면 결제 오픈 시 이 가격 그대로 잠가드려요."
+                          : "결제가 오픈되면 정가로 안내드려요."}
                         {showSocialProof && (
                           <>
                             <br />
