@@ -70,7 +70,11 @@ export interface PersonalColorResult {
   /** 실제 누적 진단 완료 수 — 사회적 증거 표시용. 조작하지 않은 진짜 값. */
   communityCount?: number;
   premiumDetail: {
-    expertOverview: string;
+    expertCommentary: {
+      differentiation: string; // 헷갈리기 쉬운 인접 시즌 타입과의 차이
+      nuance: string; // 이 톤만이 갖는 심화 뉘앙스
+      practicalTip: string; // 실전 활용 시 유의점
+    };
     analysisFactors: Record<AnalysisFactorKey, string>;
     skinTone: string;
     reasoning: string;
@@ -144,7 +148,10 @@ export const ANALYSIS_SYSTEM_PROMPT = `너는 15년 경력의 시니어 컬러 �
    - colorHarmony: 피부·눈동자·모발이 만들어내는 색채 조화의 특징
    - charmPoint: 이 시즌 타입만의 대표적 매력 포인트
 9. premiumDetail.analysisFactors는 위 7가지 관찰 포인트 각각에 대해 무엇을 관찰했는지 아주 짧은 구(6~12자 내외 한글 구절, 문장 아님)로 채워. 예: "밝고 핑크빛이 도는 쿨톤", "골드빛이 감도는 웜 언더톤".
-10. premiumDetail.expertOverview는 "왜(why) 그리고 더 깊은(deeper)" 파트 — 7가지 관찰 포인트 중 특히 결정적이었던 근거를 짚어가며, 왜 이 시즌 타입으로 판단했는지, 헷갈리기 쉬운 인접 타입과 어떻게 다른지, 이 톤만이 갖는 심화 뉘앙스를 다뤄. freeSummary에서 이미 설명한 내용을 반복하지 말 것.
+10. premiumDetail.expertCommentary는 "왜(why) 그리고 더 깊은(deeper)" 파트 — 3개 섹션으로 명확히 나눠서 작성해 (각 섹션 2~3문장, freeSummary나 skinTone/reasoning에서 이미 다룬 내용은 반복하지 말고 그보다 한 단계 더 깊은 통찰만 담아):
+   - differentiation: 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 7가지 관찰 포인트 중 어떤 근거로 구체적으로 다른지
+   - nuance: 이 톤만이 갖는 심화 뉘앙스 — 같은 시즌 안에서도 이 사람만의 세부적인 색채 특징
+   - practicalTip: 이 뉘앙스를 실전에서 활용할 때(컬러 선택·조합 등) 유의할 점
 
 다음 JSON 스키마를 정확히 따라줘:
 {
@@ -163,7 +170,11 @@ export const ANALYSIS_SYSTEM_PROMPT = `너는 15년 경력의 시니어 컬러 �
     "charmPoint": "이 타입만의 매력 포인트, 2문장 이내"
   },
   "premiumDetail": {
-    "expertOverview": "전문가 심화 코멘터리, 5~7문장. 헷갈리기 쉬운 인접 시즌 타입(예: 라이트 서머 vs 소프트 서머)과 이 타입이 구체적으로 어떻게 다른지, 이 톤만이 갖는 심화 뉘앙스와 실전 활용 시 유의점을 전문 용어로 설명. freeSummary나 아래 skinTone/reasoning에서 이미 다룬 내용은 반복하지 말고, 그보다 한 단계 더 깊은 통찰만 담아.",
+    "expertCommentary": {
+      "differentiation": "헷갈리기 쉬운 인접 시즌 타입과 이 타입이 구체적으로 어떻게 다른지, 2~3문장",
+      "nuance": "이 톤만이 갖는 심화 뉘앙스, 2~3문장",
+      "practicalTip": "실전 활용 시 유의점, 2~3문장"
+    },
     "analysisFactors": {
       "skinUndertone": "짧은 관찰 구절 (6~12자)",
       "eyeContrast": "짧은 관찰 구절",

@@ -693,9 +693,32 @@ export default function DiagnosePage() {
               {!isUnlocked && (
                 <AdRewardGate
                   unlockedContent={
-                    <p className="text-sm leading-relaxed">
-                      {result.premiumDetail.expertOverview}
-                    </p>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                          인접 타입과의 차이
+                        </p>
+                        <p className="text-sm leading-relaxed">
+                          {result.premiumDetail.expertCommentary.differentiation}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                          이 톤만의 심화 뉘앙스
+                        </p>
+                        <p className="text-sm leading-relaxed">
+                          {result.premiumDetail.expertCommentary.nuance}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                          실전 활용 유의점
+                        </p>
+                        <p className="text-sm leading-relaxed">
+                          {result.premiumDetail.expertCommentary.practicalTip}
+                        </p>
+                      </div>
+                    </div>
                   }
                 />
               )}
@@ -720,13 +743,34 @@ export default function DiagnosePage() {
 
               {isUnlocked ? (
                 <div className="flex flex-col gap-5">
-                  <div className="card-surface rounded-2xl p-7">
-                    <h3 className="font-serif-kr font-semibold mb-3">
+                  <div className="card-surface rounded-2xl p-7 flex flex-col gap-4">
+                    <h3 className="font-serif-kr font-semibold -mb-2">
                       심화 컨설팅 소견
                     </h3>
-                    <p className="text-sm leading-relaxed">
-                      {result.premiumDetail.expertOverview}
-                    </p>
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                        인접 타입과의 차이
+                      </p>
+                      <p className="text-sm leading-relaxed">
+                        {result.premiumDetail.expertCommentary.differentiation}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                        이 톤만의 심화 뉘앙스
+                      </p>
+                      <p className="text-sm leading-relaxed">
+                        {result.premiumDetail.expertCommentary.nuance}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--accent)] tracking-wide mb-1.5">
+                        실전 활용 유의점
+                      </p>
+                      <p className="text-sm leading-relaxed">
+                        {result.premiumDetail.expertCommentary.practicalTip}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="card-surface rounded-2xl p-7">
