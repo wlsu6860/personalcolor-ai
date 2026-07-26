@@ -23,6 +23,12 @@ const REASSURANCE_MESSAGES = [
 
 type Tier = "single" | "membership";
 
+// 지금은 사업자등록 전, 사람들 반응을 보는 단계라 가격/결제 얘기를 먼저 꺼내면
+// "어? 결제해야 하나?" 하고 이탈할 수 있다. 그래서 지금은 이메일만 가볍게 받고,
+// 가격·티어 선택 UI는 꺼둔다. 사업자등록 끝나고 결제를 실제로 열 때 이 값만
+// true로 바꾸면 아래 PRICING·얼리버드 UI가 그대로 다시 켜진다.
+const SHOW_PRICING = false;
+
 // 실제로 존재하는 마감 시각(KST) — 이 시점이 지나면 조기등록가는 자동으로
 // 사라지고 정가만 보인다. 가짜 카운트다운(방문할 때마다 리셋되는 것)이 아니라
 // 진짜 고정된 미래 시점이라 몇 번을 다시 봐도 같은 마감일이 유지된다.
@@ -353,7 +359,7 @@ export default function DiagnosePage() {
   }
 
   async function handleWaitlistSubmit() {
-    if (!selectedTier) {
+    if (SHOW_PRICING && !selectedTier) {
       setWaitlistError("먼저 위에서 옵션을 선택해주세요.");
       setWaitlistStatus("error");
       return;
@@ -1041,12 +1047,57 @@ export default function DiagnosePage() {
                     <div className="relative flex flex-col items-center justify-center gap-3 bg-[var(--card)]/90 backdrop-blur-[2px] px-8 py-10 text-center">
                       <span className="text-xl">✅</span>
                       <p className="text-sm leading-relaxed">
-                        <strong>
-                          {selectedTier ? PRICING[selectedTier].label : "리포트"}
-                        </strong>{" "}
-                        대기 명단에 등록됐어요.
+                        <strong>오픈 알림 신청</strong> 완료됐어요.
                         <br />
-                        결제가 오픈되면 이 이메일로 가장 먼저 알려드릴게요.
+                        정식 오픈하면 이 이메일로 가장 먼저 알려드릴게요.
+                      </p>
+                    </div>
+                  ) : !SHOW_PRICING ? (
+                    <div className="relative flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-7">
+                      <span className="text-lg">🔒</span>
+                      <p className="text-sm text-center leading-relaxed">
+                        <strong>
+                          {name ? `${name}님을` : "회원님을"} 위한 컬러{" "}
+                          {bestColorsCount + avoidColorsCount}개 · 코디{" "}
+                          {outfitComboCount}세트 · 뷰티팁 3가지
+                        </strong>
+                        가 준비됐어요
+                      </p>
+                      <p className="text-xs text-[var(--muted)] text-center leading-relaxed">
+                        아직 준비 중이에요 — 이메일만 남겨주시면 정식 오픈 때
+                        가장 먼저, 무료로 열어드릴게요
+                      </p>
+
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="이메일 주소"
+                        className="w-full rounded-full border hairline bg-[var(--background)] px-5 py-3.5 outline-none focus:border-[var(--accent)] text-sm text-center"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleWaitlistSubmit}
+                        disabled={waitlistStatus === "loading"}
+                        className="btn-primary w-full font-medium py-3.5 rounded-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {waitlistStatus === "loading" ? "등록 중..." : "무료로 오픈 알림 받기"}
+                      </button>
+
+                      {waitlistStatus === "error" && (
+                        <p className="text-xs text-red-500">{waitlistError}</p>
+                      )}
+                      <p className="text-[10px] text-[var(--muted)] text-center leading-relaxed">
+                        결제는 없어요 — 이메일만 남기시면 돼요.
+                        {showSocialProof && (
+                          <>
+                            <br />
+                            지금까지 {analysisCount.toLocaleString("ko-KR")}명이 컬러핏으로
+                            진단받았어요
+                          </>
+                        )}
                       </p>
                     </div>
                   ) : (
