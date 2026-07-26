@@ -195,9 +195,14 @@ export async function POST(request: NextRequest) {
     }
 
     // ---- 5) 본 분석 ----
+    // max_tokens: 원래 5200이었는데, 오늘 스키마에 expertCommentary(3문단),
+    // makeupPalette(4개), subtypeDescription을 추가로 얹으면서 9개 bestColors +
+    // 4개 avoidColors + 18개 아웃핏 아이템 + 여러 문단 텍스트를 합친 JSON이
+    // 5200 토큰을 넘겨 응답이 중간에 잘리는 경우가 생겼을 가능성이 높다(잘리면
+    // JSON.parse가 실패해 "분석 중 오류"로 떨어짐). 여유 있게 올려둔다.
     const message = await anthropic.messages.create({
       model: "claude-sonnet-5",
-      max_tokens: 5200,
+      max_tokens: 8000,
       system: ANALYSIS_SYSTEM_PROMPT,
       messages: [
         {
@@ -223,7 +228,22 @@ export async function POST(request: NextRequest) {
       throw new Error("결과 형식을 해석할 수 없습니다.");
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let result: any;
+    try {
+      result = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      // stop_reason이 "max_tokens"면 응답이 중간에 잘려서 JSON이 깨진 것 —
+      // 원인 파악용으로 남겨둔다(사용자에게는 그대로 일반 오류 메시지가 나감).
+      console.error(
+        "[analyze] JSON 파싱 실패 · stop_reason:",
+        message.stop_reason,
+        "· 응답 길이:",
+        textBlock.text.length,
+        parseError
+      );
+      throw parseError;
+    }
     const communityCount = await incrementAnalysisCount().catch(() => undefined);
     return withQuotaCookie(
       NextResponse.json({ ...result, communityCount }),
