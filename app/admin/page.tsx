@@ -6,7 +6,11 @@ export const metadata = {
 };
 
 // 사업자등록 + 결제 연동을 시작할 기준선 — 이 숫자에 도달하면 다음 단계로 넘어갈 시점.
-const LAUNCH_THRESHOLD = 10;
+const LAUNCH_THRESHOLD = 20;
+
+// 선착순 무료 이용권 약속 — 이 인원까지는 결제 오픈 시 심화 리포트 1회를 무료로
+// 열어줘야 한다는 뜻. subscribedAt 오름차순 기준 순번으로 판단한다.
+const FREE_UNLOCK_LIMIT = 20;
 
 export default async function AdminPage({
   searchParams,
@@ -28,6 +32,14 @@ export default async function AdminPage({
 
   const progress = Math.min(100, Math.round((count / LAUNCH_THRESHOLD) * 100));
   const reached = count >= LAUNCH_THRESHOLD;
+
+  // 무료 이용권 대상(선착순 가입 순번) 계산 — 오름차순으로 다시 정렬해서 순번을 매긴다.
+  const earliestFirst = [...subscribers].sort((a, b) =>
+    a.subscribedAt.localeCompare(b.subscribedAt)
+  );
+  const freeUnlockEmails = new Set(
+    earliestFirst.slice(0, FREE_UNLOCK_LIMIT).map((s) => s.email)
+  );
 
   return (
     <div className="flex-1 flex flex-col">
@@ -59,9 +71,15 @@ export default async function AdminPage({
           </div>
           <p className="text-xs text-[var(--muted)] mt-3">
             {reached
-              ? "10명을 넘었어요 — 이제 사업자등록 + 결제(PG) 연동을 시작할 시점이에요."
+              ? `${LAUNCH_THRESHOLD}명을 넘었어요 — 이제 사업자등록 + 결제(PG) 연동을 시작할 시점이에요.`
               : `${LAUNCH_THRESHOLD - count}명 더 모이면 사업자등록을 진행할 기준에 도달해요.`}
           </p>
+        </div>
+
+        <div className="card-surface rounded-2xl p-5 mb-8 text-xs text-[var(--muted)] leading-relaxed">
+          🎁 <strong className="text-[var(--foreground)]">선착순 {FREE_UNLOCK_LIMIT}명 무료 이용권 약속</strong> —
+          결제 오픈 시 아래 표에서 "무료권" 배지가 붙은 분들께는 심화 리포트 1회를
+          무료로 열어드려야 해요. 잊지 말 것.
         </div>
 
         <div className="card-surface rounded-2xl overflow-hidden">
@@ -74,6 +92,7 @@ export default async function AdminPage({
                   <th className="p-4">관심 등급</th>
                   <th className="p-4">유입 경로</th>
                   <th className="p-4">신청일</th>
+                  <th className="p-4">무료권</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,11 +105,18 @@ export default async function AdminPage({
                     <td className="p-4 text-[var(--muted)] whitespace-nowrap">
                       {new Date(s.subscribedAt).toLocaleDateString("ko-KR")}
                     </td>
+                    <td className="p-4">
+                      {freeUnlockEmails.has(s.email) && (
+                        <span className="text-[10px] font-medium text-[var(--accent)] bg-[var(--accent-tint)] px-2 py-1 rounded-full whitespace-nowrap">
+                          🎁 무료권
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {subscribers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-[var(--muted)]">
+                    <td colSpan={6} className="p-8 text-center text-[var(--muted)]">
                       아직 구독자가 없어요.
                     </td>
                   </tr>

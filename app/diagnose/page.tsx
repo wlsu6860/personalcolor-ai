@@ -29,6 +29,11 @@ type Tier = "single" | "membership";
 // true로 바꾸면 아래 PRICING·얼리버드 UI가 그대로 다시 켜진다.
 const SHOW_PRICING = false;
 
+// 선착순 무료 이용권 약속 — app/admin/page.tsx의 FREE_UNLOCK_LIMIT과 반드시 같은
+// 값을 유지해야 한다(둘 다 바뀌면 같이 바꿀 것). 실제 등록자 수를 서버에서
+// 받아와 비교하므로, 진짜로 20명이 채워지면 문구가 자동으로 사라진다.
+const FREE_UNLOCK_LIMIT = 20;
+
 // 실제로 존재하는 마감 시각(KST) — 이 시점이 지나면 조기등록가는 자동으로
 // 사라지고 정가만 보인다. 가짜 카운트다운(방문할 때마다 리셋되는 것)이 아니라
 // 진짜 고정된 미래 시점이라 몇 번을 다시 봐도 같은 마감일이 유지된다.
@@ -228,6 +233,7 @@ export default function DiagnosePage() {
   const [shareStatus, setShareStatus] = useState<"idle" | "working" | "done">("idle");
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [scanReady, setScanReady] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -236,6 +242,16 @@ export default function DiagnosePage() {
       return () => clearTimeout(t);
     }
     setBarsAnimated(false);
+  }, [step]);
+
+  // "선착순 20명 무료 이용권" 문구에 진짜 현재 등록자 수를 붙이기 위해 가져온다 —
+  // 실패해도 조용히 무시하고(null이면 문구를 그냥 숨김), 절대 임의의 숫자로 채우지 않는다.
+  useEffect(() => {
+    if (step !== "result" || SHOW_PRICING) return;
+    fetch("/api/subscriber-count")
+      .then((r) => r.json())
+      .then((d) => setSubscriberCount(typeof d.count === "number" ? d.count : null))
+      .catch(() => setSubscriberCount(null));
   }, [step]);
 
   // 스캔 애니메이션(scanSweep, 2.6s)이 끝날 때까지 "다음 단계로"를 비활성화해서
@@ -1043,64 +1059,100 @@ export default function DiagnosePage() {
                       <p className="text-sm">{result.premiumDetail.makeupTips}</p>
                     </div>
 
-                    {waitlistStatus === "done" ? (
-                    <div className="relative flex flex-col items-center justify-center gap-3 bg-[var(--card)]/90 backdrop-blur-[2px] px-8 py-10 text-center">
-                      <span className="text-xl">✅</span>
-                      <p className="text-sm leading-relaxed">
-                        <strong>오픈 알림 신청</strong> 완료됐어요.
-                        <br />
-                        정식 오픈하면 이 이메일로 가장 먼저 알려드릴게요.
-                      </p>
-                    </div>
-                  ) : !SHOW_PRICING ? (
-                    <div className="relative flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-7">
-                      <span className="text-lg">🔒</span>
-                      <p className="text-sm text-center leading-relaxed">
-                        <strong>
-                          {name ? `${name}님을` : "회원님을"} 위한 컬러{" "}
-                          {bestColorsCount + avoidColorsCount}개 · 코디{" "}
-                          {outfitComboCount}세트 · 뷰티팁 3가지
-                        </strong>
-                        가 준비됐어요
-                      </p>
-                      <p className="text-xs text-[var(--muted)] text-center leading-relaxed">
-                        아직 준비 중이에요 — 이메일만 남겨주시면 정식 오픈 때
-                        가장 먼저, 무료로 열어드릴게요
-                      </p>
+                    {(() => {
+                      const slotsLeft =
+                        subscriberCount !== null
+                          ? Math.max(0, FREE_UNLOCK_LIMIT - subscriberCount)
+                          : null;
+                      const promoActive = slotsLeft !== null && slotsLeft > 0;
 
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="이메일 주소"
-                        className="w-full rounded-full border hairline bg-[var(--background)] px-5 py-3.5 outline-none focus:border-[var(--accent)] text-sm text-center"
-                      />
+                      if (waitlistStatus === "done") {
+                        return (
+                          <div className="relative flex flex-col items-center justify-center gap-3 bg-[var(--card)]/90 backdrop-blur-[2px] px-8 py-10 text-center">
+                            <span className="text-xl">✅</span>
+                            <p className="text-sm leading-relaxed">
+                              <strong>오픈 알림 신청</strong> 완료됐어요.
+                              {promoActive && (
+                                <>
+                                  {" "}
+                                  선착순 {FREE_UNLOCK_LIMIT}명 안에 드셔서{" "}
+                                  <strong>심화 리포트 1회 무료 이용권</strong>도 함께
+                                  드려요.
+                                </>
+                              )}
+                              <br />
+                              정식 오픈하면 이 이메일로 가장 먼저 알려드릴게요.
+                            </p>
+                          </div>
+                        );
+                      }
 
-                      <button
-                        type="button"
-                        onClick={handleWaitlistSubmit}
-                        disabled={waitlistStatus === "loading"}
-                        className="btn-primary w-full font-medium py-3.5 rounded-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {waitlistStatus === "loading" ? "등록 중..." : "무료로 오픈 알림 받기"}
-                      </button>
+                      if (SHOW_PRICING) return null; // 아래 티어 선택 UI 분기로 이동
 
-                      {waitlistStatus === "error" && (
-                        <p className="text-xs text-red-500">{waitlistError}</p>
-                      )}
-                      <p className="text-[10px] text-[var(--muted)] text-center leading-relaxed">
-                        결제는 없어요 — 이메일만 남기시면 돼요.
-                        {showSocialProof && (
-                          <>
-                            <br />
-                            지금까지 {analysisCount.toLocaleString("ko-KR")}명이 컬러핏으로
-                            진단받았어요
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  ) : (
+                      return (
+                        <div className="relative flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-7">
+                          <span className="text-lg">🔒</span>
+                          <p className="text-sm text-center leading-relaxed">
+                            <strong>
+                              {name ? `${name}님을` : "회원님을"} 위한 컬러{" "}
+                              {bestColorsCount + avoidColorsCount}개 · 코디{" "}
+                              {outfitComboCount}세트 · 뷰티팁 3가지
+                            </strong>
+                            가 준비됐어요
+                          </p>
+
+                          {promoActive ? (
+                            <p className="text-[11px] text-[var(--accent)] font-medium bg-[var(--accent-tint)] px-3 py-1.5 rounded-full text-center leading-relaxed">
+                              🎁 선착순 {FREE_UNLOCK_LIMIT}명 한정 · 현재{" "}
+                              {subscriberCount}/{FREE_UNLOCK_LIMIT}명 · 지금 등록하면
+                              심화 리포트 1회 무료 이용권
+                            </p>
+                          ) : (
+                            <p className="text-xs text-[var(--muted)] text-center leading-relaxed">
+                              아직 준비 중이에요 — 이메일만 남겨주시면 정식 오픈 때
+                              가장 먼저 알려드릴게요
+                            </p>
+                          )}
+
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="이메일 주소"
+                            className="w-full rounded-full border hairline bg-[var(--background)] px-5 py-3.5 outline-none focus:border-[var(--accent)] text-sm text-center"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={handleWaitlistSubmit}
+                            disabled={waitlistStatus === "loading"}
+                            className="btn-primary w-full font-medium py-3.5 rounded-full text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {waitlistStatus === "loading"
+                              ? "등록 중..."
+                              : promoActive
+                              ? "무료 이용권 받기"
+                              : "무료로 오픈 알림 받기"}
+                          </button>
+
+                          {waitlistStatus === "error" && (
+                            <p className="text-xs text-red-500">{waitlistError}</p>
+                          )}
+                          <p className="text-[10px] text-[var(--muted)] text-center leading-relaxed">
+                            결제는 없어요 — 이메일만 남기시면 돼요.
+                            {showSocialProof && (
+                              <>
+                                <br />
+                                지금까지 {analysisCount.toLocaleString("ko-KR")}명이
+                                컬러핏으로 진단받았어요
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      );
+                    })()}
+                    {SHOW_PRICING && (
                     <div className="relative flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-7">
                       <span className="text-lg">🔒</span>
                       <p className="text-sm text-center leading-relaxed">
