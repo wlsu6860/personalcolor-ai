@@ -1017,8 +1017,12 @@ export default function DiagnosePage() {
                     </div>
                   )}
 
-                  <div className="relative card-surface rounded-2xl p-7 overflow-hidden">
-                    <div className="blur-sm select-none pointer-events-none opacity-70">
+                  <div className="relative card-surface rounded-2xl overflow-hidden">
+                    {/* 배경으로 살짝 보이는 블러 처리된 미리보기 — 실제 카드 높이에는
+                        관여하지 않는 장식용 레이어라, absolute로 깔아 아래 실제 콘텐츠
+                        (락 아이콘부터 가격·이메일·버튼까지)가 잘리지 않고 필요한
+                        만큼 자연스럽게 늘어나게 한다. */}
+                    <div className="absolute inset-0 p-7 overflow-hidden blur-sm select-none pointer-events-none opacity-70">
                       <h3 className="font-serif-kr font-semibold mb-3">상세 리포트</h3>
                       <p className="text-sm mb-3">{result.premiumDetail.skinTone}</p>
                       <div className="flex gap-2 mb-3">
@@ -1034,7 +1038,7 @@ export default function DiagnosePage() {
                     </div>
 
                     {waitlistStatus === "done" ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--card)]/90 backdrop-blur-[2px] px-8 text-center">
+                    <div className="relative flex flex-col items-center justify-center gap-3 bg-[var(--card)]/90 backdrop-blur-[2px] px-8 py-10 text-center">
                       <span className="text-xl">✅</span>
                       <p className="text-sm leading-relaxed">
                         <strong>
@@ -1046,7 +1050,7 @@ export default function DiagnosePage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-6">
+                    <div className="relative flex flex-col items-center justify-center gap-4 bg-[var(--card)]/85 backdrop-blur-[2px] px-6 py-7">
                       <span className="text-lg">🔒</span>
                       <p className="text-sm text-center leading-relaxed">
                         <strong>
