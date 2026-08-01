@@ -234,7 +234,17 @@ export default function DiagnosePage() {
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [scanReady, setScanReady] = useState(false);
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+  const [acquisitionSource, setAcquisitionSource] = useState("direct");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 인스타그램 bio 링크 등에 붙인 utm_source를 그대로 구독 기록에 남겨서,
+  // 관리자 대시보드에서 어느 채널이 실제 가입으로 이어지는지 볼 수 있게 한다.
+  useEffect(() => {
+    const utmSource = new URLSearchParams(window.location.search).get(
+      "utm_source"
+    );
+    if (utmSource) setAcquisitionSource(utmSource);
+  }, []);
 
   useEffect(() => {
     if (step === "result") {
@@ -395,7 +405,7 @@ export default function DiagnosePage() {
           email,
           name,
           season: result?.season ?? null,
-          source: "paywall",
+          source: acquisitionSource,
           tier: selectedTier,
         }),
       });
