@@ -37,6 +37,9 @@ yarn-error.log*
 # local subscriber data (dev-only file fallback; production uses Redis)
 /data/subscribers.json
 
+# marketing assets (reels/graphics, not part of the app)
+/content
+
 # vercel
 .vercel
 
