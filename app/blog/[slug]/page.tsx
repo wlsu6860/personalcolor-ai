@@ -39,6 +39,11 @@ export default async function BlogPostPage({
   const post = getBlogPost(slug);
   if (!post) notFound();
 
+  const relatedPosts = BLOG_POSTS.filter((p) => p.slug !== post.slug).slice(
+    0,
+    3,
+  );
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -137,6 +142,25 @@ export default async function BlogPostPage({
         <p className="text-xs text-[var(--muted)] mt-14 leading-relaxed border-t hairline pt-6">
           이 글은 일반적인 정보 제공 목적이며, 의학적·전문적 진단을 대신하지 않습니다.
         </p>
+
+        {relatedPosts.length > 0 && (
+          <div className="mt-10 pt-8 border-t hairline">
+            <h2 className="font-serif-kr text-lg font-semibold mb-4">
+              함께 보면 좋은 글
+            </h2>
+            <div className="flex flex-col gap-3">
+              {relatedPosts.map((related) => (
+                <Link
+                  key={related.slug}
+                  href={`/blog/${related.slug}`}
+                  className="block text-sm font-medium hover:text-[var(--accent)] transition-colors"
+                >
+                  {related.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="border-t hairline">
